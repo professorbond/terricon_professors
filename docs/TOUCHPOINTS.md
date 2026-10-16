@@ -11,3 +11,4 @@
 | 4 | `src/layouts/navigation.ts` | `getNavigation(role)` = его группы + `extNavigation(role)`; тело функции переименовано в `baseNavigation` | Пункты меню ext-фич отдельной группой «Сервисы JanaМен» (по ролям и флагам) |
 | 5 | `src/pages/dashboard/DashboardPage.tsx` | `<ExtSlot name="home.widgets" />` после блока «В движении» | Блоки «Мои гарантии», «Зарплата по факту» на главной |
 | 6 | `src/pages/profile/ProfilePage.tsx` | `<ExtSlot name="profile.sections" />` после карточки профиля | «Открытая лестница» в профиле |
+| 7 | `src/features/leave/components/RequestList.tsx` | `<ExtSlot name="request.list.badge" requestId=…/>` рядом со статусом | Бейдж срока («Ответ до …») в списке заявок |
