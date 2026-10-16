@@ -7,6 +7,15 @@ import { api, revisionStore, tokenStore } from './client'
 
 interface LoginOut { accessToken: string; user: User }
 
+/** В историю заявки напарника — только смены статуса. Служебные отметки бэкенда
+ * (срок ответа, приказ в Documentolog) показывают ext-бейджи, а не его таймлайн. */
+const STATUS_EVENTS = new Set(['created', 'approved', 'rejected', 'escalated', 'cancelled'])
+type ApiEvent = LeaveRequest['history'][number] & { readonly event?: string }
+type ApiLeave = Omit<LeaveRequest, 'history'> & { readonly history: readonly ApiEvent[] }
+const toLeave = (request: ApiLeave): LeaveRequest => ({ ...request, history: request.history.filter((item) => !item.event || STATUS_EVENTS.has(item.event)) })
+const mapOne = (result: ServiceResult<ApiLeave>): ServiceResult<LeaveRequest> => (result.ok ? { ok: true, data: toLeave(result.data) } : result)
+const mapPage = (result: ServiceResult<Page<ApiLeave>>): ServiceResult<Page<LeaveRequest>> => (result.ok ? { ok: true, data: { ...result.data, items: result.data.items.map(toLeave) } } : result)
+
 /** Реальные сервисы поверх API бэкенда (docs/API_CONTRACT.md). Те же контракты, что и у mock-адаптера. */
 export function createHttpServices(session: DemoSessionStore): ApplicationServices {
   async function signIn(body: { role: Role } | { login: string }): Promise<ServiceResult<User>> {
@@ -34,12 +43,12 @@ export function createHttpServices(session: DemoSessionStore): ApplicationServic
     },
     profiles: { getMyProfile: (options) => api.get<EmployeeProfile>('/profile/me', options) },
     leaveRequests: {
-      listMine: (options) => api.get<Page<LeaveRequest>>('/leave/my', options),
-      listTeam: (options) => api.get<Page<LeaveRequest>>('/leave/team', options),
-      listPendingApprovals: (options) => api.get<Page<LeaveRequest>>('/leave/pending', options),
-      getById: (id, options) => api.get<LeaveRequest>(`/leave/${encodeURIComponent(id)}`, options),
-      submit: (input, options) => api.post<LeaveRequest>('/leave', input, options),
-      decide: (id, input, options) => api.post<LeaveRequest>(`/leave/${encodeURIComponent(id)}/decision`, input, options),
+      listMine: async (options) => mapPage(await api.get<Page<ApiLeave>>('/leave/my', options)),
+      listTeam: async (options) => mapPage(await api.get<Page<ApiLeave>>('/leave/team', options)),
+      listPendingApprovals: async (options) => mapPage(await api.get<Page<ApiLeave>>('/leave/pending', options)),
+      getById: async (id, options) => mapOne(await api.get<ApiLeave>(`/leave/${encodeURIComponent(id)}`, options)),
+      submit: async (input, options) => mapOne(await api.post<ApiLeave>('/leave', input, options)),
+      decide: async (id, input, options) => mapOne(await api.post<ApiLeave>(`/leave/${encodeURIComponent(id)}/decision`, input, options)),
     },
     notifications: {
       listMine: (options) => api.get<Page<EmployeeNotification>>('/notifications', options),
