@@ -5,6 +5,6 @@ type ButtonProps = ComponentPropsWithoutRef<'button'> & {
 }
 
 /** Native button semantics; navigation uses a Link, never an onClick redirect. */
-export function Button({ variant = 'primary', className = '', type = 'button', ...props }: ButtonProps) {
-  return <button {...props} type={type} className={`button button--${variant} ${className}`} />
+export function Button({ variant = 'primary', className = '', type = 'button', children, ...props }: ButtonProps) {
+  return <button {...props} type={type} className={`button button--${variant} ${className}`}><span className="button-content">{children}</span></button>
 }

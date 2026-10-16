@@ -69,7 +69,8 @@
   --z-skip-link: 60;
 
   --motion-fast: 160ms;
-  --motion-standard: 240ms;
-  --motion-deliberate: 400ms;
+  --motion-standard: 260ms;
+  --motion-expressive: 600ms;
+  --motion-deliberate: var(--motion-expressive);
   --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }

@@ -1,5 +1,8 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { Check, X } from 'lucide-react'
+import { motion, useReducedMotion } from 'motion/react'
+import { motionTokens } from '@/styles/motion'
+import { SegmentedControl } from '@/components/motion/SegmentedControl'
 import { Button } from '@/components/ui/Button'
 import { useServices } from '@/services/context'
 import type { LeaveRequest } from '../model'
@@ -12,6 +15,7 @@ export function DecisionPanel({ request }: { request: LeaveRequest }) {
   const [busy, setBusy] = useState(false)
   const sending = useRef(false)
   const reason = useRef<HTMLTextAreaElement>(null)
+  const reduce = useReducedMotion()
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (sending.current || request.status !== 'Submitted') return
@@ -24,6 +28,6 @@ export function DecisionPanel({ request }: { request: LeaveRequest }) {
     sending.current = false
     setBusy(false)
   }
-  if (request.status !== 'Submitted') return <div className="decision-complete" role="status"><Check size={19} aria-hidden="true" /><p>Решение сохранено. Сотруднику создано уведомление.<small>Повторное решение по этой заявке недоступно.</small></p></div>
-  return <section className="decision-panel"><div><span className="eyebrow">ВАШ ХОД / 02</span><h2>Решение по заявке</h2><p>Результат сразу появится у сотрудника.</p></div><form onSubmit={submit} noValidate><fieldset className="decision-options" disabled={busy}><legend className="sr-only">Решение руководителя</legend><label><input type="radio" name="decision" checked={decision === 'Approved'} onChange={() => { setDecision('Approved'); setError(null) }} /><span><Check size={18} aria-hidden="true" />Согласовать</span></label><label><input type="radio" name="decision" checked={decision === 'Rejected'} onChange={() => { setDecision('Rejected'); setError(null) }} /><span><X size={18} aria-hidden="true" />Отклонить</span></label></fieldset><label className="comment-field"><span>{decision === 'Rejected' ? 'Причина отклонения' : 'Комментарий к решению'} <small>{decision === 'Rejected' ? 'обязательно' : 'необязательно'}</small></span><textarea ref={reason} value={comment} required={decision === 'Rejected'} maxLength={1000} rows={3} disabled={busy} aria-invalid={!!error} aria-describedby={error ? 'decision-error' : undefined} onChange={(event) => { setComment(event.target.value); setError(null) }} /></label>{error && <p id="decision-error" className="field-error" role="alert">{error}</p>}<Button type="submit" disabled={busy} aria-busy={busy}>{busy ? 'Сохраняем…' : decision === 'Approved' ? 'Подтвердить согласование' : 'Подтвердить отклонение'}</Button></form></section>
+  if (request.status !== 'Submitted') return <motion.div className="decision-complete" data-tone={request.status === 'Rejected' ? 'warm' : 'normal'} role="status" initial={reduce ? false : { opacity: 0.5, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={reduce ? { duration: 0 } : motionTokens.transition}>{request.status === 'Rejected' ? <X size={19} aria-hidden="true" /> : <Check size={19} aria-hidden="true" />}<p>Решение сохранено. Сотруднику создано уведомление.<small>Повторное решение по этой заявке недоступно.</small></p></motion.div>
+  return <section className="decision-panel"><div><span className="eyebrow">ВАШ ХОД / 02</span><h2>Решение по заявке</h2><p>Результат сразу появится у сотрудника.</p></div><form onSubmit={submit} noValidate><SegmentedControl label="Решение руководителя" value={decision} disabled={busy} onChange={(value) => { setDecision(value); setError(null) }} options={[{ value: 'Approved', label: 'Согласовать', icon: <Check size={18} aria-hidden="true" /> }, { value: 'Rejected', label: 'Отклонить', icon: <X size={18} aria-hidden="true" />, tone: 'warm' }]} /><label className="comment-field"><span>{decision === 'Rejected' ? 'Причина отклонения' : 'Комментарий к решению'} <small>{decision === 'Rejected' ? 'обязательно' : 'необязательно'}</small></span><textarea ref={reason} value={comment} required={decision === 'Rejected'} maxLength={1000} rows={3} disabled={busy} aria-invalid={!!error} aria-describedby={error ? 'decision-error' : undefined} onChange={(event) => { setComment(event.target.value); setError(null) }} /></label>{error && <p id="decision-error" className="field-error" role="alert">{error}</p>}<Button type="submit" disabled={busy} aria-busy={busy}>{busy ? 'Сохраняем…' : decision === 'Approved' ? 'Подтвердить согласование' : 'Подтвердить отклонение'}</Button></form></section>
 }

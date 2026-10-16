@@ -35,7 +35,12 @@ async function createRequest(page: Page, start = 10, end = 14) {
   const id = new URL(page.url()).pathname.split('/').at(-1)!
   return { number, id }
 }
-async function noOverflow(page: Page) { expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true) }
+async function noOverflow(page: Page) {
+  // Measure after a paint at the new viewport, including its media-query changes.
+  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))))
+  const result = await page.evaluate(() => ({ width: document.documentElement.clientWidth, scroll: document.documentElement.scrollWidth }))
+  expect(result.scroll, JSON.stringify(result)).toBeLessThanOrEqual(result.width)
+}
 
 test('Employee → create → Manager approve → Employee result, history, notification and reload', async ({ page }) => {
   const errors = errorsOf(page)

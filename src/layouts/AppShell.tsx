@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { ArrowUpRight } from 'lucide-react'
 import { NotificationLink } from '@/features/notifications/NotificationLink'
-import { Link, Outlet, useLocation } from 'react-router'
+import { Link, useLocation } from 'react-router'
+import { PageTransition } from '@/components/motion/PageTransition'
 import { Wordmark } from '@/components/brand/Wordmark'
 import { getDemoRole } from '@/features/identity/demo-roles'
 import type { Role } from '@/features/identity/model'
@@ -40,7 +41,7 @@ export default function AppShell({ role }: { role: Role }) {
           <div className="workspace-breadcrumb"><span className="workspace-location-dot" /><span>JanaМен</span><span className="breadcrumb-divider">/</span><strong>{roleInfo.description}</strong></div>
           <div className="workspace-tools"><span className="workspace-demo-tag">ДЕМО</span><NotificationLink /><span className="toolbar-divider" /><UserMenu role={role} /></div>
         </header>
-        <main className="workspace-main" id="workspace-content" tabIndex={-1} ref={main}><Outlet /></main>
+        <main className="workspace-main" id="workspace-content" tabIndex={-1} ref={main}><PageTransition /></main>
         <footer className="workspace-footer"><span><span className="status-dot" /> Пространство для вашего рабочего дня</span><span className="eyebrow">J / M — {roleInfo.index}</span></footer>
       </div>
       <MobileNavigation role={role} />

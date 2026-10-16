@@ -103,7 +103,7 @@
   .request-facts dt { color: var(--text-secondary); }
   .request-facts dd { margin: 0; overflow-wrap: anywhere; }
   .request-status { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; font-size: 10px; white-space: nowrap; border-radius: 3px; background: var(--status-warning-surface); color: var(--status-warning); }
-  .request-status > span { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .request-status > .request-status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
   .request-status[data-status='Approved'] { color: var(--status-success); background: var(--status-success-surface); }
   .request-status[data-status='Rejected'] { color: var(--status-danger); background: var(--status-danger-surface); }
   .request-status[data-status='Cancelled'] { color: var(--text-secondary); background: var(--surface-subtle); }
