@@ -51,7 +51,7 @@ Swagger со всеми схемами: http://localhost:8000/docs.
 | `ILeaveRequestService.submit` | `POST /api/leave/requests {submissionKey, startDate, endDate, comment}` | `LeaveRequest` (201) |
 | `ILeaveRequestService.listPendingApprovals` | `GET /api/leave/requests/pending` | `Page<LeaveRequest>` |
 | `ILeaveRequestService.listTeam` | `GET /api/leave/requests/team` | `Page<LeaveRequest>`, все статусы |
-| `ILeaveRequestService.decide` | `POST /api/leave/requests/{id}/decision {decision, expectedVersion, comment, reasonCode?}` | `LeaveRequest` |
+| `ILeaveRequestService.decide` | `POST /api/leave/requests/{id}/decision {decision, expectedVersion, comment, reasonCode?}` | `LeaveRequest`; повторное решение или устаревшая версия → 409 `ALREADY_DECIDED` / `STALE_VERSION` |
 | `INotificationService.listMine` | `GET /api/notifications[?unreadOnly=true]` | `Page<Notification>` |
 | `INotificationService.markRead` | `POST /api/notifications/{id}/read` | `Notification` |
 | счётчик колокольчика | `GET /api/notifications/unread-count` | `{unread}` |
@@ -187,3 +187,13 @@ cd backend && uv run pytest -q     # SQLite в памяти, docker не нуж�
 ```
 
 Фикстуры `client` и `login("aigerim")` лежат в `tests/conftest.py`.
+
+Сквозная проверка живого API на Postgres (роли, права, сценарии, гонки, демо, CORS — 72 проверки).
+Перед демо прогонять обязательно. **Скрипт стирает данные демо** (`/api/demo/reset`):
+
+```sh
+docker compose up -d && cd backend && uv run python scripts/smoke_api.py
+```
+
+В эндпоинтах берите сессию через `session: AsyncSession = DbSession`: транзакция коммитится
+до отправки ответа, и следующий запрос фронта сразу видит изменения.

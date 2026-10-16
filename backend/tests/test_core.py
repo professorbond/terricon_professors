@@ -110,7 +110,7 @@ async def test_cannot_decide_twice_or_with_stale_version(client, login):
     assert r.status_code == 409 and r.json()["code"] == "STALE_VERSION"
     assert (await client.post(f"/api/requests/{rid}/decide", headers=he, json={"decision": "Approved"})).status_code == 200
     r = await client.post(f"/api/requests/{rid}/decide", headers=he, json={"decision": "Rejected", "comment": "передумал"})
-    assert r.status_code == 403  # решение уже принято — права решать больше нет
+    assert r.status_code == 409 and r.json()["code"] == "ALREADY_DECIDED"
 
 
 async def test_employee_cannot_decide_own_and_can_cancel(client, login):

@@ -11,7 +11,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.core.db import get_session
+from app.core.db import DbSession
 from app.core.errors import AppError
 from app.core.org.models import Employee
 
@@ -52,7 +52,7 @@ def _unauthenticated(message: str = "Требуется вход") -> AppError:
 
 async def current_user(
     creds: HTTPAuthorizationCredentials | None = Depends(_bearer),
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = DbSession,
 ) -> Employee:
     if creds is None:
         raise _unauthenticated()

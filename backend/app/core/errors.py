@@ -8,6 +8,7 @@ from typing import Any, Literal
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import IntegrityError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 ProblemKind = Literal["unauthenticated", "forbidden", "not-found", "validation", "conflict", "unavailable"]
@@ -76,6 +77,12 @@ def install_error_handlers(app: FastAPI) -> None:
             fields.setdefault(".".join(loc) or "_", []).append(err.get("msg", "invalid"))
         body = AppError("validation", "VALIDATION", "Проверьте введённые данные", fields).to_body()
         return JSONResponse(body, status_code=422)
+
+    @app.exception_handler(IntegrityError)
+    async def _integrity(_: Request, exc: IntegrityError) -> JSONResponse:
+        # Нарушение уникальности/ссылок из-за параллельных запросов — конфликт, а не 500
+        body = AppError("conflict", "CONFLICT", "Данные изменились параллельно, повторите действие").to_body()
+        return JSONResponse(body, status_code=409)
 
     @app.exception_handler(StarletteHTTPException)
     async def _http(_: Request, exc: StarletteHTTPException) -> JSONResponse:

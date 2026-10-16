@@ -52,3 +52,12 @@ class RequestEvent(Base):
     data: Mapped[dict[str, Any]]
 
     request: Mapped[Request] = relationship(back_populates="events")
+
+
+class RequestCounter(Base):
+    """Счётчик видимых номеров (JL-2026-0001) — атомарно через upsert, без гонок."""
+
+    __tablename__ = "request_counters"
+
+    key: Mapped[str] = mapped_column(String(32), primary_key=True)  # "JL-2026"
+    value: Mapped[int]

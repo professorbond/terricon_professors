@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import rbac
 from app.core.auth import current_user
-from app.core.db import get_session
+from app.core.db import DbSession
 from app.core.org.models import Employee, Unit
 from app.core.org.service import get_employee, get_unit, list_team
 from app.core.schemas import ApiModel, Page
@@ -76,13 +76,13 @@ async def build_profile(session: AsyncSession, viewer: Employee, emp: Employee) 
 
 
 @router.get("/profile/me", response_model=EmployeeProfile, response_model_by_alias=True)
-async def my_profile(user: Employee = Depends(current_user), session: AsyncSession = Depends(get_session)):
+async def my_profile(user: Employee = Depends(current_user), session: AsyncSession = DbSession):
     return await build_profile(session, user, user)
 
 
 @router.get("/employees/{employee_id}", response_model=EmployeeProfile, response_model_by_alias=True)
 async def employee_profile(
-    employee_id: str, user: Employee = Depends(current_user), session: AsyncSession = Depends(get_session)
+    employee_id: str, user: Employee = Depends(current_user), session: AsyncSession = DbSession
 ):
     emp = await get_employee(session, employee_id)
     rbac.ensure(rbac.can_view_employee(user, emp), "Нет доступа к профилю этого сотрудника")
@@ -91,7 +91,7 @@ async def employee_profile(
 
 @router.get("/team", response_model=Page[EmployeeProfile], response_model_by_alias=True)
 async def my_team(
-    user: Employee = Depends(rbac.require_role(rbac.MANAGER)), session: AsyncSession = Depends(get_session)
+    user: Employee = Depends(rbac.require_role(rbac.MANAGER)), session: AsyncSession = DbSession
 ):
     return Page(items=[await build_profile(session, user, e) for e in await list_team(session, user.id)])
 
@@ -100,7 +100,7 @@ async def my_team(
 async def all_employees(
     country: str | None = None,
     user: Employee = Depends(rbac.require_role(rbac.HR)),
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = DbSession,
 ):
     q = select(Employee).where(Employee.active).order_by(Employee.full_name)
     if country:

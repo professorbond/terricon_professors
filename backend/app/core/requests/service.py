@@ -2,7 +2,10 @@
 
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import clock, rbac
@@ -18,6 +21,7 @@ from app.core.requests.models import (
     REJECTED,
     SUBMITTED,
     Request,
+    RequestCounter,
     RequestEvent,
 )
 from app.core.requests.registry import request_types
@@ -66,10 +70,30 @@ async def get_visible(session: AsyncSession, viewer: Employee, request_id: str) 
 
 
 async def _next_number(session: AsyncSession, prefix: str) -> str:
-    year = clock.now().year
-    like = f"{prefix}-{year}-%"
-    count = await session.scalar(select(func.count()).select_from(Request).where(Request.number.like(like)))
-    return f"{prefix}-{year}-{(count or 0) + 1:04d}"
+    key = f"{prefix}-{clock.now().year}"
+    insert = pg_insert if session.get_bind().dialect.name == "postgresql" else sqlite_insert
+    stmt = (
+        insert(RequestCounter)
+        .values(key=key, value=1)
+        .on_conflict_do_update(index_elements=["key"], set_={"value": RequestCounter.value + 1})
+        .returning(RequestCounter.value)
+    )
+    value = (await session.execute(stmt)).scalar_one()
+    return f"{key}-{value:04d}"
+
+
+async def _lock(session: AsyncSession, request_id: str) -> Request:
+    """Перечитать заявку с блокировкой строки: параллельные решения выполняются по очереди."""
+    q = select(Request).where(Request.id == request_id).with_for_update().execution_options(populate_existing=True)
+    req = (await session.scalars(q)).first()
+    if req is None:
+        raise not_found("Заявка не найдена")
+    return req
+
+
+async def lock_employee(session: AsyncSession, employee_id: str) -> None:
+    """Сериализовать подачу заявок одного сотрудника (проверка пересечений, двойной клик)."""
+    await session.execute(select(Employee.id).where(Employee.id == employee_id).with_for_update())
 
 
 def _add_event(
@@ -146,9 +170,17 @@ async def create(
         created_at=clock.now(),
         events=[],
     )
-    session.add(req)
-    _add_event(req, "created", employee)
-    await session.flush()
+    try:
+        async with session.begin_nested():
+            session.add(req)
+            _add_event(req, "created", employee)
+            await session.flush()
+    except IntegrityError:
+        # Параллельная отправка с тем же submission_key успела раньше
+        existing = await find_by_submission_key(session, employee, submission_key) if submission_key else None
+        if existing is None:
+            raise
+        return existing
     await events.emit("request.created", session=session, request=req, employee=employee)
     return req
 
@@ -206,8 +238,11 @@ async def decide(
     reason_code: str | None = None,
     comment: str | None = None,
 ) -> Request:
-    req = await get_visible(session, actor, request_id)
+    await get_visible(session, actor, request_id)
+    req = await _lock(session, request_id)
     if not can_decide(actor, req):
+        if req.status not in OPEN_STATUSES and req.employee_id != actor.id:
+            raise conflict("ALREADY_DECIDED", "По заявке уже принято решение", {"status": req.status})
         raise forbidden("Вы не можете принять решение по этой заявке")
     if expected_version is not None and expected_version != req.version:
         raise conflict("STALE_VERSION", "Заявка изменилась, обновите страницу", {"version": req.version})
@@ -218,17 +253,13 @@ async def decide_by_system(
     session: AsyncSession, request_id: str, decision: str, reason: str, reason_code: str | None = None
 ) -> Request:
     """Решение по политике HR (гарантии, «Зарплата по факту»). reason — комментарий в историю."""
-    req = await session.get(Request, request_id)
-    if req is None:
-        raise not_found("Заявка не найдена")
+    req = await _lock(session, request_id)
     return await _apply_decision(session, req, None, decision, reason_code, reason)
 
 
 async def escalate_to_hr(session: AsyncSession, request_id: str, reason: str) -> Request:
     """Передать заявку HR (например, истёк срок ответа руководителя)."""
-    req = await session.get(Request, request_id)
-    if req is None:
-        raise not_found("Заявка не найдена")
+    req = await _lock(session, request_id)
     if req.status != SUBMITTED:
         raise conflict("ALREADY_DECIDED", "Заявку нельзя передать HR в текущем статусе")
     req.status = ESCALATED
@@ -240,7 +271,8 @@ async def escalate_to_hr(session: AsyncSession, request_id: str, reason: str) ->
 
 
 async def cancel(session: AsyncSession, actor: Employee, request_id: str) -> Request:
-    req = await get_visible(session, actor, request_id)
+    await get_visible(session, actor, request_id)
+    req = await _lock(session, request_id)
     if not can_cancel(actor, req):
         if req.status != SUBMITTED:
             raise conflict("ALREADY_DECIDED", "Отозвать можно только заявку на рассмотрении")
@@ -312,4 +344,5 @@ __all__ = [
     "list_all",
     "list_inbox",
     "list_mine",
+    "lock_employee",
 ]

@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core import clock
 from app.core.auth import issue_token
 from app.core.auth_router import LoginOut, user_out
-from app.core.db import get_session
+from app.core.db import DbSession
 from app.core.demo.service import save_offset, wipe_all
 from app.core.errors import not_found
 from app.core.org.models import Employee
@@ -52,7 +52,7 @@ async def state() -> DemoStateOut:
 
 
 @router.post("/advance-time", response_model=DemoStateOut, response_model_by_alias=True)
-async def advance_time(body: AdvanceIn, session: AsyncSession = Depends(get_session)) -> DemoStateOut:
+async def advance_time(body: AdvanceIn, session: AsyncSession = DbSession) -> DemoStateOut:
     """Сдвинуть часы вперёд и сразу выполнить тик (сроки гарантий, сигналы)."""
     await save_offset(session, clock.offset() + timedelta(hours=body.hours))
     await ticks.run(session)
@@ -60,7 +60,7 @@ async def advance_time(body: AdvanceIn, session: AsyncSession = Depends(get_sess
 
 
 @router.post("/reset", response_model=DemoStateOut, response_model_by_alias=True)
-async def reset(request: Request, session: AsyncSession = Depends(get_session)) -> DemoStateOut:
+async def reset(request: Request, session: AsyncSession = DbSession) -> DemoStateOut:
     """Стереть все данные и заново применить seed. Часы возвращаются к реальному времени."""
     from app.seed.loader import run_seed
 
@@ -70,7 +70,7 @@ async def reset(request: Request, session: AsyncSession = Depends(get_session)) 
 
 
 @router.get("/personas", response_model=list[Persona], response_model_by_alias=True)
-async def personas(session: AsyncSession = Depends(get_session)) -> list[Persona]:
+async def personas(session: AsyncSession = DbSession) -> list[Persona]:
     rows = await session.scalars(select(Employee).where(Employee.active).order_by(Employee.country, Employee.role))
     return [
         Persona(login=e.login, display_name=e.full_name, role=e.role, country=e.country, position=e.position)
@@ -79,7 +79,7 @@ async def personas(session: AsyncSession = Depends(get_session)) -> list[Persona
 
 
 @router.post("/login-as", response_model=LoginOut, response_model_by_alias=True)
-async def login_as(body: LoginAsIn, session: AsyncSession = Depends(get_session)) -> LoginOut:
+async def login_as(body: LoginAsIn, session: AsyncSession = DbSession) -> LoginOut:
     """Вход без пароля за тестового персонажа (демо-панель). В проде роутер не подключается."""
     emp = await find_by_login(session, body.login)
     if emp is None:

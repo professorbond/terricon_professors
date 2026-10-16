@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import clock
 from app.core.auth import current_user
-from app.core.db import get_session
+from app.core.db import DbSession
 from app.core.errors import not_found
 from app.core.i18n import t
 from app.core.notifications.models import Notification
@@ -52,7 +52,7 @@ def present(n: Notification, lang: str) -> NotificationOut:
 async def list_mine(
     unread_only: bool = False,
     user: Employee = Depends(current_user),
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = DbSession,
 ) -> Page[NotificationOut]:
     q = select(Notification).where(Notification.employee_id == user.id)
     if unread_only:
@@ -63,14 +63,14 @@ async def list_mine(
 
 @router.get("/unread-count", response_model=UnreadCount, response_model_by_alias=True)
 async def get_unread_count(
-    user: Employee = Depends(current_user), session: AsyncSession = Depends(get_session)
+    user: Employee = Depends(current_user), session: AsyncSession = DbSession
 ) -> UnreadCount:
     return UnreadCount(unread=await unread_count(session, user.id))
 
 
 @router.post("/{notification_id}/read", response_model=NotificationOut, response_model_by_alias=True)
 async def mark_read(
-    notification_id: str, user: Employee = Depends(current_user), session: AsyncSession = Depends(get_session)
+    notification_id: str, user: Employee = Depends(current_user), session: AsyncSession = DbSession
 ) -> NotificationOut:
     n = await session.get(Notification, notification_id)
     # Чужое уведомление неотличимо от несуществующего
@@ -83,7 +83,7 @@ async def mark_read(
 
 @router.post("/read-all", response_model=UnreadCount, response_model_by_alias=True)
 async def mark_all_read(
-    user: Employee = Depends(current_user), session: AsyncSession = Depends(get_session)
+    user: Employee = Depends(current_user), session: AsyncSession = DbSession
 ) -> UnreadCount:
     await session.execute(
         update(Notification)

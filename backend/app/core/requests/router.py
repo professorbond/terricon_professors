@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import rbac
 from app.core.auth import current_user
-from app.core.db import get_session
+from app.core.db import DbSession
 from app.core.i18n import t
 from app.core.org.models import Employee
 from app.core.requests import service
@@ -46,7 +46,7 @@ async def list_types(user: Employee = Depends(current_user)) -> list[RequestType
 
 @router.get("/my", response_model=Page[RequestOut], response_model_by_alias=True)
 async def my_requests(
-    type: str | None = None, user: Employee = Depends(current_user), session: AsyncSession = Depends(get_session)
+    type: str | None = None, user: Employee = Depends(current_user), session: AsyncSession = DbSession
 ) -> Page[RequestOut]:
     return await _page(session, await service.list_mine(session, user, type), user)
 
@@ -56,7 +56,7 @@ async def inbox(
     status: Literal["open", "all"] = "open",
     type: str | None = None,
     user: Employee = Depends(rbac.require_role(rbac.MANAGER, rbac.HR)),
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = DbSession,
 ) -> Page[RequestOut]:
     rows = await service.list_inbox(session, user, only_open=status == "open", type_code=type)
     return await _page(session, rows, user)
@@ -68,7 +68,7 @@ async def registry(
     status: str | None = None,
     country: str | None = None,
     user: Employee = Depends(rbac.require_role(rbac.HR)),
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = DbSession,
 ) -> Page[RequestOut]:
     """Реестр всех заявок для HR."""
     return await _page(session, await service.list_all(session, type, status, country), user)
@@ -76,7 +76,7 @@ async def registry(
 
 @router.get("/{request_id}", response_model=RequestOut, response_model_by_alias=True)
 async def get_request(
-    request_id: str, user: Employee = Depends(current_user), session: AsyncSession = Depends(get_session)
+    request_id: str, user: Employee = Depends(current_user), session: AsyncSession = DbSession
 ) -> RequestOut:
     return await present(session, await service.get_visible(session, user, request_id), user)
 
@@ -86,7 +86,7 @@ async def decide(
     request_id: str,
     body: DecideIn,
     user: Employee = Depends(current_user),
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = DbSession,
 ) -> RequestOut:
     req = await service.decide(
         session, user, request_id, body.decision, body.expected_version, body.reason_code, body.comment
@@ -96,6 +96,6 @@ async def decide(
 
 @router.post("/{request_id}/cancel", response_model=RequestOut, response_model_by_alias=True)
 async def cancel(
-    request_id: str, user: Employee = Depends(current_user), session: AsyncSession = Depends(get_session)
+    request_id: str, user: Employee = Depends(current_user), session: AsyncSession = DbSession
 ) -> RequestOut:
     return await present(session, await service.cancel(session, user, request_id), user)

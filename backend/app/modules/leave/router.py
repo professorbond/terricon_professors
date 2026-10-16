@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import rbac
 from app.core.auth import current_user
-from app.core.db import get_session
+from app.core.db import DbSession
 from app.core.errors import not_found
 from app.core.org.models import Employee
 from app.core.requests import service as requests
@@ -65,7 +65,7 @@ async def _page(session: AsyncSession, rows, viewer: Employee) -> Page[LeaveRequ
 
 
 @router.get("/balance", response_model=LeaveBalanceOut, response_model_by_alias=True)
-async def my_balance(user: Employee = Depends(current_user), session: AsyncSession = Depends(get_session)):
+async def my_balance(user: Employee = Depends(current_user), session: AsyncSession = DbSession):
     days, as_of = await balance(session, user)
     pending = sum(
         r.payload["requestedDays"] for r in await requests.list_mine(session, user, TYPE) if r.status == SUBMITTED
@@ -74,13 +74,13 @@ async def my_balance(user: Employee = Depends(current_user), session: AsyncSessi
 
 
 @router.get("/requests/my", response_model=Page[LeaveRequestOut], response_model_by_alias=True)
-async def list_mine(user: Employee = Depends(current_user), session: AsyncSession = Depends(get_session)):
+async def list_mine(user: Employee = Depends(current_user), session: AsyncSession = DbSession):
     return await _page(session, await requests.list_mine(session, user, TYPE), user)
 
 
 @router.get("/requests/pending", response_model=Page[LeaveRequestOut], response_model_by_alias=True)
 async def list_pending(
-    user: Employee = Depends(rbac.require_role(rbac.MANAGER, rbac.HR)), session: AsyncSession = Depends(get_session)
+    user: Employee = Depends(rbac.require_role(rbac.MANAGER, rbac.HR)), session: AsyncSession = DbSession
 ):
     """Очередь согласования: открытые заявки, где пользователь — согласующий."""
     return await _page(session, await requests.list_inbox(session, user, True, TYPE), user)
@@ -88,7 +88,7 @@ async def list_pending(
 
 @router.get("/requests/team", response_model=Page[LeaveRequestOut], response_model_by_alias=True)
 async def list_team(
-    user: Employee = Depends(rbac.require_role(rbac.MANAGER, rbac.HR)), session: AsyncSession = Depends(get_session)
+    user: Employee = Depends(rbac.require_role(rbac.MANAGER, rbac.HR)), session: AsyncSession = DbSession
 ):
     """Все заявки команды (любой статус). Для HR — все заявки на отпуск."""
     if user.role == rbac.HR:
@@ -99,7 +99,7 @@ async def list_team(
 
 
 @router.get("/requests/{request_id}", response_model=LeaveRequestOut, response_model_by_alias=True)
-async def get_one(request_id: str, user: Employee = Depends(current_user), session: AsyncSession = Depends(get_session)):
+async def get_one(request_id: str, user: Employee = Depends(current_user), session: AsyncSession = DbSession):
     req = await requests.get_visible(session, user, request_id)
     if req.type != TYPE:
         raise not_found("Заявка на отпуск не найдена")
@@ -107,7 +107,8 @@ async def get_one(request_id: str, user: Employee = Depends(current_user), sessi
 
 
 @router.post("/requests", response_model=LeaveRequestOut, response_model_by_alias=True, status_code=201)
-async def submit(body: SubmitLeaveIn, user: Employee = Depends(current_user), session: AsyncSession = Depends(get_session)):
+async def submit(body: SubmitLeaveIn, user: Employee = Depends(current_user), session: AsyncSession = DbSession):
+    await requests.lock_employee(session, user.id)
     existing = await requests.find_by_submission_key(session, user, body.submission_key)
     if existing is not None and existing.type == TYPE:  # повтор той же отправки
         return await to_leave(session, existing, user)
@@ -127,7 +128,7 @@ async def decide(
     request_id: str,
     body: LeaveDecisionIn,
     user: Employee = Depends(current_user),
-    session: AsyncSession = Depends(get_session),
+    session: AsyncSession = DbSession,
 ):
     req = await requests.get_visible(session, user, request_id)
     if req.type != TYPE:

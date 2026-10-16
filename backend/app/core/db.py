@@ -4,6 +4,7 @@ from collections.abc import AsyncIterator
 from datetime import datetime
 from typing import Any
 
+from fastapi import Depends
 from sqlalchemy import JSON, DateTime, MetaData
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
@@ -62,3 +63,8 @@ async def get_session() -> AsyncIterator[AsyncSession]:
         except Exception:
             await session.rollback()
             raise
+
+
+# Транзакция коммитится ДО отправки ответа (scope="function"): следующий запрос клиента
+# сразу видит изменения. Используйте `session: AsyncSession = DbSession` в эндпоинтах.
+DbSession = Depends(get_session, scope="function")

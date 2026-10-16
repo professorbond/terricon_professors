@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import current_user, issue_token, verify_password
-from app.core.db import get_session
+from app.core.db import DbSession
 from app.core.errors import AppError
 from app.core.org.models import Employee
 from app.core.org.service import find_by_login
@@ -37,7 +37,7 @@ def user_out(emp: Employee) -> UserOut:
 
 
 @router.post("/login", response_model=LoginOut, response_model_by_alias=True)
-async def login(body: LoginIn, session: AsyncSession = Depends(get_session)) -> LoginOut:
+async def login(body: LoginIn, session: AsyncSession = DbSession) -> LoginOut:
     emp = await find_by_login(session, body.login.strip().lower())
     if emp is None or not emp.active or not verify_password(body.password, emp.password_hash):
         raise AppError("unauthenticated", "INVALID_CREDENTIALS", "Неверный логин или пароль")
