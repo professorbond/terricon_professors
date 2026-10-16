@@ -7,6 +7,7 @@ import { NotFoundPage } from '@/pages/not-found/NotFoundPage'
 import { useDemoSession } from '@/features/identity/demo-context'
 import { getDemoRole } from '@/features/identity/demo-roles'
 import { plannedScreens, type PlannedScreen } from './routes'
+import { extElement } from '@/modules'
 
 const LoginPage = lazy(() => import('@/pages/login/LoginPage'))
 const AppShell = lazy(() => import('@/layouts/AppShell'))
@@ -41,7 +42,7 @@ function DemoScreen({ screen }: { screen: PlannedScreen }) {
     case 'approval': return <RequestDetailPage manager />
     case 'notifications': return <NotificationsPage />
   }
-  return <PlannedPage screen={screen} />
+  return extElement(screen.id) ?? <PlannedPage screen={screen} />
 }
 
 export function AppRouter() {

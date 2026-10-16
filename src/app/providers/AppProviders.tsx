@@ -5,9 +5,12 @@ import { motionTokens } from '@/styles/motion'
 import { browserDemoSessionStore } from '@/mocks/demo-session'
 import { DemoSessionProvider } from './DemoSessionProvider'
 import { createMockServices } from '@/mocks/services'
+import { apiEnabled } from '@/services/http/client'
+import { createHttpServices } from '@/services/http/services'
 import { ServicesContext } from '@/services/context'
 
-const services = createMockServices(browserDemoSessionStore)
+// VITE_API_URL задан → реальный бэкенд; иначе — демо-моки (тесты Playwright напарника)
+const services = apiEnabled ? createHttpServices(browserDemoSessionStore) : createMockServices(browserDemoSessionStore)
 
 export function AppProviders({ children }: PropsWithChildren) {
   return (

@@ -1,4 +1,5 @@
 import type { Role } from '@/features/identity/model'
+import { extPlannedScreens } from '@/modules'
 
 export interface PlannedScreen {
   readonly id: string
@@ -11,7 +12,7 @@ export interface PlannedScreen {
 const allRoles = ['Employee', 'Manager', 'HRAdmin'] as const
 
 /** Screen catalogue. Leave flow is implemented; other business areas remain placeholders. */
-export const plannedScreens = [
+const baseScreens = [
   { id: 'login', path: '/login', title: 'Вход в JanaМен', roles: [] },
   { id: 'dashboard', path: '/dashboard', title: 'Личный кабинет', roles: allRoles },
   { id: 'profile', path: '/profile', title: 'Профиль сотрудника', roles: allRoles },
@@ -36,3 +37,6 @@ export const plannedScreens = [
   { id: 'hr-knowledge', path: '/hr/knowledge', title: 'База знаний HR', roles: ['HRAdmin'] },
   { id: 'forbidden', path: '/forbidden', title: 'Доступ ограничен', roles: [] },
 ] as const satisfies readonly PlannedScreen[]
+
+/** + экраны ext-фич (src/modules), только при работе с реальным API. */
+export const plannedScreens: readonly PlannedScreen[] = [...baseScreens, ...extPlannedScreens()]

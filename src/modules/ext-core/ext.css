@@ -1,0 +1,63 @@
+/* Экраны ext-фич: токены и язык JANA FLOW (docs/DESIGN_SYSTEM.md). Без новых цветов. */
+.ext-lang { max-width: 9rem; }
+.ext-lang .signal-segments { min-height: 2.25rem; }
+
+.ext-pill { display: inline-flex; align-items: center; gap: .35rem; padding: .2rem .55rem; border-radius: 999px; font-size: .78rem; font-weight: 600; line-height: 1.4; white-space: nowrap; background: var(--surface-subtle); color: var(--text-secondary); }
+.ext-pill[data-tone='success'] { background: var(--status-success-surface); color: var(--status-success); }
+.ext-pill[data-tone='warning'] { background: var(--status-warning-surface); color: var(--status-warning); }
+.ext-pill[data-tone='danger'] { background: var(--status-danger-surface); color: var(--status-danger); }
+.ext-pill[data-tone='info'] { background: var(--action-soft); color: var(--text-primary); }
+
+.ext-section { margin-top: 2.5rem; padding-top: 1.75rem; border-top: 1px solid var(--border-subtle); }
+.ext-section > .eyebrow { display: block; margin-bottom: .5rem; }
+.ext-section h2 { margin: 0 0 .75rem; font-size: clamp(1.3rem, 2.4vw, 1.75rem); letter-spacing: -.02em; }
+.ext-muted { color: var(--text-secondary); }
+.ext-row { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.25rem; }
+.ext-row--between { justify-content: space-between; }
+.ext-grid { display: grid; gap: 1px; background: var(--border-subtle); border-block: 1px solid var(--border-subtle); grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
+.ext-grid > * { background: var(--surface-page); padding: 1.1rem 1rem; }
+.ext-figure { font-size: clamp(2.2rem, 6vw, 3.6rem); font-weight: 600; letter-spacing: -.04em; line-height: 1; color: var(--action-primary); font-variant-numeric: tabular-nums; }
+.ext-figure--ink { color: var(--text-primary); }
+.ext-figure small { font-size: .9rem; font-weight: 500; letter-spacing: 0; color: var(--text-secondary); margin-left: .35rem; }
+.ext-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border-subtle); }
+.ext-list > li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem 1rem; padding: .9rem 0; border-bottom: 1px solid var(--border-subtle); }
+.ext-list > li > div { min-width: 0; }
+.ext-list strong { display: block; }
+.ext-panel { border: 1px solid var(--border-subtle); border-radius: 12px; background: var(--surface-raised); padding: 1.25rem; }
+.ext-panel--dark { background: var(--surface-inverse); color: var(--text-inverse); border-color: var(--border-inverse); }
+.ext-panel--dark .eyebrow, .ext-panel--dark .ext-muted { color: var(--text-inverse-muted); }
+.ext-form { display: grid; gap: 1rem; max-width: 36rem; }
+.ext-form label > span { display: block; font-weight: 600; margin-bottom: .35rem; }
+.ext-form input, .ext-form select, .ext-form textarea { width: 100%; min-height: 2.75rem; padding: .55rem .75rem; border: 1px solid var(--border-control); border-radius: 6px; background: var(--surface-raised); color: var(--text-primary); font: inherit; }
+.ext-form textarea { min-height: 6rem; resize: vertical; }
+.ext-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: .5rem; }
+.ext-check { display: flex; gap: .6rem; align-items: center; font-weight: 500; }
+.ext-check input { width: 1.2rem; height: 1.2rem; min-height: 0; accent-color: var(--action-primary); }
+.ext-criteria { list-style: none; margin: .75rem 0 0; padding: 0; display: grid; gap: .5rem; }
+.ext-criteria li { display: flex; gap: .6rem; align-items: baseline; }
+.ext-criteria li::before { content: '○'; color: var(--text-secondary); }
+.ext-criteria li[data-done='true']::before { content: '●'; color: var(--action-primary); }
+.ext-tabs { margin: 1.5rem 0 1.25rem; max-width: 30rem; }
+.ext-badges { display: inline-flex; flex-wrap: wrap; gap: .35rem; margin-top: .3rem; }
+.ext-chat { display: grid; gap: 1rem; }
+.ext-bubble { padding: 1rem 1.1rem; border-radius: 12px; border: 1px solid var(--border-subtle); background: var(--surface-raised); max-width: 46rem; }
+.ext-bubble--me { justify-self: end; background: var(--action-soft); border-color: transparent; }
+.ext-bubble p { margin: 0; white-space: pre-wrap; }
+.ext-sources { margin-top: .75rem; display: grid; gap: .25rem; font-size: .88rem; }
+.ext-table-scroll { overflow-x: auto; }
+.ext-table { width: 100%; border-collapse: collapse; font-size: .93rem; }
+.ext-table th, .ext-table td { text-align: left; padding: .7rem .6rem; border-bottom: 1px solid var(--border-subtle); vertical-align: top; }
+.ext-table th { font-family: 'IBM Plex Mono', monospace; font-size: .72rem; font-weight: 400; text-transform: uppercase; letter-spacing: .06em; color: var(--text-secondary); }
+.ext-table input, .ext-table select { width: 6.5rem; min-height: 2.25rem; padding: .3rem .45rem; border: 1px solid var(--border-control); border-radius: 6px; font: inherit; background: var(--surface-raised); }
+
+.ext-demo { position: fixed; right: 1rem; bottom: 5.5rem; z-index: 60; width: min(21rem, calc(100vw - 2rem)); }
+@media (min-width: 1024px) { .ext-demo { bottom: 1rem; } }
+.ext-demo-toggle { position: fixed; right: 1rem; bottom: 5.5rem; z-index: 60; }
+@media (min-width: 1024px) { .ext-demo-toggle { bottom: 1rem; } }
+.ext-demo .ext-panel { box-shadow: 0 12px 40px rgb(23 34 31 / .25); max-height: 70vh; overflow: auto; }
+
+@media (max-width: 520px) {
+  .ext-grid { grid-template-columns: 1fr; }
+  .ext-table th, .ext-table td { padding: .55rem .4rem; }
+  .ext-actions .button { flex: 1 1 100%; }
+}

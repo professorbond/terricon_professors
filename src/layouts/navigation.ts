@@ -1,6 +1,7 @@
 import { BookOpen, CircleHelp, ClipboardList, GraduationCap, House, Layers3, Network, NotebookText, Sparkles, UsersRound } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { Role } from '@/features/identity/model'
+import { extNavigation } from '@/modules'
 
 export interface NavigationItem { path: string; label: string; icon: LucideIcon; index: string; end?: boolean }
 export interface NavigationGroup { label: string; items: NavigationItem[] }
@@ -16,6 +17,10 @@ const personal: NavigationGroup = {
 }
 
 export function getNavigation(role: Role): NavigationGroup[] {
+  return [...baseNavigation(role), ...extNavigation(role)]
+}
+
+function baseNavigation(role: Role): NavigationGroup[] {
   if (role === 'Manager') return [personal, { label: 'Команда', items: [
     { path: '/manager/approvals', label: 'Согласования', icon: Layers3, index: '05' },
     { path: '/manager/team', label: 'Моя команда', icon: UsersRound, index: '06' },
