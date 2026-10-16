@@ -4,7 +4,7 @@
 Поля и типы совпадают с `src/services/contracts.ts` и `src/features/*/model.ts`. Всё, что от них
 отличается, перечислено в разделе [«Расхождения»](#расхождения-с-контрактами-фронтенда).
 
-> **Состояние: этап 1 готов.** Академия и AI Jana пока заглушки (🟡), формат финальный.
+> **Состояние: этапы 1–2 готовы.** AI Jana пока заглушка (🟡), формат финальный.
 
 **Статусы:** ✅ работает · 🟡 заглушка с фиксированным ответом (заголовок `X-Stub: true`), формат финальный · ⏳ будет.
 
@@ -29,6 +29,7 @@
   | `unavailable` | 503 |
 - Роли: `Employee | Manager | HRAdmin`.
 - Статусы заявок: `Submitted | Approved | Rejected | Escalated | Cancelled`.
+- После обновления бэкенда демо-данные пересоздаются сами, если поменялся seed. Вручную — `POST /api/demo/reset`.
 - Учётки (пароль `demo1234`):
   | login | Роль | Страна | Кто |
   |---|---|---|---|
@@ -69,7 +70,7 @@ EmployeeProfile = {
   leaveBalance: { days, asOf, pendingDays, availableDays },   // days = остаток 1С − одобренные; available = days − на рассмотрении
   role, country, lang, unitId, unitKind, qualification, gradeCode,
   monthlyBase: number | null,          // только сам и HR, руководителю null
-  assignedTraining: { courseId, title, status, lessonsPercent, scorePercent, dueDate }[],  // ⏳ заполнится на этапе 2
+  assignedTraining: { courseId, title, status, lessonsPercent, scorePercent, dueDate }[],
   unreadNotifications: number
 }
 ```
@@ -165,18 +166,38 @@ Notification = { id, userId, title, message, createdAt, readAt, target: {kind:"r
 
 `title` и `message` уже переведены на язык пользователя (`lang`).
 
-## Jana Academy — `AcademyService` (🟡 заглушка до этапа 2)
+## Jana Academy — `AcademyService` ✅
 
 | | Метод | Путь | Роли | Ответ |
 |---|---|---|---|---|
-| 🟡 | GET | `/api/academy/courses` | все | `Page<CourseSummary>` — каталог |
-| 🟡 | GET | `/api/academy/my` | все | `Page<AssignedCourse>` (`listAssigned`) = `CourseSummary` + `{assignedAt, dueDate, progress}` |
-| 🟡 | GET | `/api/academy/courses/{id}` | все | `CourseDetail` = `CourseSummary` + `{passingScore, assigned, lessons[{id, ord, title, contentMd, completed}], questions[{id, ord, text, options[]}], progress}`. **Правильных ответов в нём нет** |
-| 🟡 | GET | `/api/academy/courses/{id}/progress` | все | `CourseProgress` (`getProgress`) |
-| 🟡 | POST | `/api/academy/lessons/{lessonId}/complete` | все | `CourseProgress` (`completeLesson`: `courseId` в пути не нужен) |
-| 🟡 | POST | `/api/academy/courses/{id}/submit` | все | `{answers: number[]}` → `{score, passed, passingScore, correct, total, progress}` |
-| 🟡 | POST | `/api/academy/assignments` | Manager (своей команде), HRAdmin | `{employeeId, courseId, dueDate?}` → `Assignment` (201) |
-| 🟡 | GET | `/api/academy/progress?unitId=` | Manager (своя команда), HRAdmin | `Page<{employeeId, employeeName, unitId, courseId, courseTitle, dueDate, progress}>` |
+| ✅ | GET | `/api/academy/courses` | все | `Page<CourseSummary>` — каталог |
+| ✅ | GET | `/api/academy/my` | все | `Page<AssignedCourse>` (`listAssigned`) = `CourseSummary` + `{assignedAt, dueDate, progress}` |
+| ✅ | GET | `/api/academy/courses/{id}` | все | `CourseDetail` = `CourseSummary` + `{passingScore, assigned, lessons[{id, ord, title, contentMd, completed}], questions[{id, ord, text, options[]}], progress}`. **Правильных ответов в нём нет** |
+| ✅ | GET | `/api/academy/courses/{id}/progress` | все | `CourseProgress` (`getProgress`) |
+| ✅ | POST | `/api/academy/lessons/{lessonId}/complete` | все | `CourseProgress` (`completeLesson`: `courseId` в пути не нужен) |
+| ✅ | POST | `/api/academy/courses/{id}/submit` | все | `{answers: number[]}` → `{score, passed, passingScore, correct, total, progress}` |
+| ✅ | POST | `/api/academy/assignments` | Manager (своей команде), HRAdmin | `{employeeId, courseId, dueDate?}` → `Assignment` (201) |
+| ✅ | GET | `/api/academy/progress?unitId=` | Manager (своя команда), HRAdmin | `Page<{employeeId, employeeName, unitId, courseId, courseTitle, dueDate, progress}>` |
+
+| Ошибка | Код | HTTP |
+|---|---|---|
+| Ответов меньше или больше, чем вопросов | `ANSWERS_MISMATCH` (`data.total`) | 422 |
+| Курс уже назначен | `ALREADY_ASSIGNED` | 409 |
+| Срок в прошлом | `INVALID_DATES` | 422 |
+| Назначение чужой команде | `FORBIDDEN` | 403 |
+| Курс или урок не найден либо из другой страны | `NOT_FOUND` | 404 |
+
+Статусы курса:
+- `Assigned` — ещё не начат;
+- `InProgress` — пройден хотя бы один урок или была попытка теста;
+- `Completed` — тест сдан (`score ≥ passingScore`).
+
+Пересдавать можно, в зачёт идёт лучший результат. При первой успешной сдаче приходит уведомление `academy.completed`
+и публикуется событие `academy.course_completed` для лестницы. Назначение курса отправляет уведомление `academy.assigned`
+с `target {kind: "course", courseId}`. Названия курсов приходят на языке пользователя (ru/kk).
+
+Seed: «Работа с возвратами» (`course-returns`, 3 урока, 3 вопроса) и «Техника безопасности на сортировке»
+(`course-safety`, 4 урока, 4 вопроса). Оба назначены Айгерим, первый уже пройден.
 
 ```ts
 CourseProgress = { courseId, completedLessonIds, totalLessons, status: "Assigned"|"InProgress"|"Completed",

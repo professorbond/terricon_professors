@@ -159,6 +159,23 @@ async def main() -> None:
         r = await c.get("/requests/all?unitId=kz-almaty-sc-a", headers=H["daniyar"])
         check(all(x["employeeId"] == "emp-asel" for x in r.json()["items"]), "HR registry filter unit")
 
+        # --- academy
+        my = (await c.get("/academy/my", headers=H["aigerim"])).json()["items"]
+        check({x["id"] for x in my} == {"course-returns", "course-safety"}, "academy: aigerim has 2 courses")
+        det = (await c.get("/academy/courses/course-safety", headers=H["aigerim"])).json()
+        check(all(set(q) == {"id", "ord", "text", "options"} for q in det["questions"]), "academy: no correct answers leaked")
+        for lid in ("l-saf-2", "l-saf-3", "l-saf-4"):
+            await c.post(f"/academy/lessons/{lid}/complete", headers=H["aigerim"])
+        r = await c.post("/academy/courses/course-safety/submit", headers=H["aigerim"], json={"answers": [1, 1, 1, 0]})
+        check(r.json().get("passed") is True, "academy: pass test", r.text)
+        prof = (await c.get("/profile/me", headers=H["aigerim"])).json()
+        check(all(t["status"] == "Completed" for t in prof["assignedTraining"]), "academy: profile shows completed")
+        r = await c.post("/academy/assignments", headers=H["erlan"], json={"employeeId": "emp-asel", "courseId": "course-safety"})
+        check(r.status_code == 403, "academy: manager cannot assign other team")
+        r = await c.post("/academy/assignments", headers=H["gulnara"], json={"employeeId": "emp-asel", "courseId": "course-safety"})
+        check(r.status_code == 201, "academy: manager assigns own team")
+        check(any(n["kind"] == "academy.assigned" for n in (await c.get("/notifications", headers=H["asel"])).json()["items"]), "academy: assigned notification")
+
         # --- notifications
         other = (await c.get("/notifications", headers=H["erlan"])).json()["items"][0]["id"]
         check((await c.post(f"/notifications/{other}/read", headers=H["aigerim"])).status_code == 404, "cannot read other's notification")

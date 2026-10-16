@@ -44,12 +44,18 @@ async def startup(app: FastAPI) -> None:
     settings: Settings = app.state.settings
     if settings.auto_migrate:
         await asyncio.to_thread(run_migrations)
-    from app.seed.loader import is_seeded, run_seed
+    from app.core.demo.service import wipe_all
+    from app.seed.loader import SEED_VERSION, is_seeded, run_seed, stored_seed_version
 
     async with sessionmaker()() as session:
         await load_offset(session)
         if settings.auto_seed and not await is_seeded(session):
             log.info("Пустая база — применяю seed")
+            await run_seed(session, app.state.modules)
+            await session.commit()
+        elif settings.demo_mode and settings.auto_seed and await stored_seed_version(session) != SEED_VERSION:
+            log.info("Seed обновился — пересоздаю демо-данные")
+            await wipe_all(session)
             await run_seed(session, app.state.modules)
             await session.commit()
 
