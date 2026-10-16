@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { slotParts, type SlotName } from './registry'
 import { useSettings } from './settings'
 
@@ -6,5 +7,6 @@ export function ExtSlot({ name, requestId }: { name: SlotName; requestId?: strin
   useSettings() // перерисовка при смене флагов
   const parts = slotParts(name)
   if (!parts.length) return null
-  return <>{parts.map(({ C, key }) => <C key={key} {...(requestId ? { requestId } : {})} />)}</>
+  // Каждый блок со своей границей: загрузка блока не замораживает страницу напарника
+  return <>{parts.map(({ C, key }) => <Suspense key={key} fallback={null}><C {...(requestId ? { requestId } : {})} /></Suspense>)}</>
 }
