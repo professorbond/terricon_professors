@@ -41,11 +41,15 @@ async def on_course_completed(session: AsyncSession, employee: Employee, course:
     if lad.next is None or not any(c.kind == "course" and c.course_id == course.id for c in lad.criteria):
         return
     if lad.ready:
-        await notify(session, employee.id, "ladder.ready", "notif.ladder.ready.title", "notif.ladder.ready.body", {"grade": lad.next.title})
+        await notify(
+            session, employee.id, "ladder.ready", "notif.ladder.ready.title", "notif.ladder.ready.body",
+            {"grade": lad.next.title}, {"kind": "course", "courseId": course.id},
+        )
     else:
         await notify(
             session, employee.id, "ladder.criterion", "notif.ladder.criterion.title", "notif.ladder.criterion.body",
             {"course": course.title, "grade": lad.next.title, "done": lad.criteria_done, "total": lad.criteria_total},
+            {"kind": "course", "courseId": course.id},
         )
 
 

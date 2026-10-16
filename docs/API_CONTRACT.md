@@ -431,3 +431,4 @@ Seed:
 | 9 | `signOut` | метод сервиса | Эндпоинта нет: JWT без состояния | Нет |
 | 10 | Отказ по заявке | `LeaveDecision {decision, expectedVersion, comment}` | С гарантиями обязателен `reasonCode` из справочника, комментарий от 10 символов | **Да**: выбор причины в окне отказа. Временный обход — `GUARANTEES_REQUIRE_REASON=false` |
 | 11 | Карточка заявки | — | Поле `extensions` (`guarantee` и др.) | Нет; нужно только для бейджа «Ответ до …» |
+| 12 | `Notification.target` | Обязательный `{kind: request\|course}` | `null` у уведомлений без объекта: `salary.review` (пересмотр зарплаты), `shift.taken` и `shift.given` (смены). Обязательная часть кейса всегда с `target` | Только для ext-фич: сделать `target` необязательным |

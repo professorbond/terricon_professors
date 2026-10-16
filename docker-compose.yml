@@ -25,6 +25,11 @@ services:
       DATABASE_URL: postgresql+asyncpg://janamen:janamen@db:5432/janamen
     ports:
       - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     depends_on:
       db:
         condition: service_healthy
@@ -41,7 +46,8 @@ services:
       - ./:/app
       - frontend-node-modules:/app/node_modules
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   db-data:
