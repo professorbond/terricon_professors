@@ -1,8 +1,8 @@
-import { Suspense, type ComponentType, type LazyExoticComponent, type ReactElement } from 'react'
+import { createElement, Suspense, type ComponentType, type LazyExoticComponent, type ReactElement } from 'react'
 import type { LucideIcon } from 'lucide-react'
 import type { Role } from '@/features/identity/model'
 import { apiEnabled } from '@/services/http/client'
-import { featureEnabled, useSettings } from './settings'
+import { featureEnabled } from './settings'
 import { translate } from './i18n'
 
 /** Места во фронтенде напарника, куда ext-модули вставляют свои блоки (CLAUDE.md §4.2). */
@@ -48,7 +48,8 @@ export function extElement(id: string): ReactElement | null {
     const screen = m.screens?.find((s) => s.id === id)
     if (screen && enabled(m) && featureEnabled(screen.feature)) {
       const Comp = screen.component
-      return <Suspense fallback={<p className="query-loading" role="status">{translate('common.loading')}</p>}><Comp /></Suspense>
+      const fallback = createElement('p', { className: 'query-loading', role: 'status' }, translate('common.loading'))
+      return createElement(Suspense, { fallback }, createElement(Comp))
     }
   }
   return null
@@ -60,10 +61,7 @@ export function extNavigation(role: Role) {
   return items.length ? [{ label: translate('nav.ext.group'), items: items.map((i, n) => ({ path: i.path, label: translate(i.labelKey), icon: i.icon, index: String(10 + n).padStart(2, '0'), ...(i.end ? { end: true } : {}) })) }] : []
 }
 
-/** Слот: рендерит блоки включённых ext-модулей. Без API (режим моков) — ничего. */
-export function ExtSlot({ name, requestId }: { name: SlotName; requestId?: string }) {
-  useSettings() // перерисовка при смене флагов
-  const parts = modules.filter(enabled).flatMap((m) => (m.slots?.[name] ?? []).map((C, i) => ({ C, key: `${m.id}-${i}` })))
-  if (!parts.length) return null
-  return <>{parts.map(({ C, key }) => <C key={key} {...(requestId ? { requestId } : {})} />)}</>
+/** Блоки слота для включённых модулей (рендер — в ExtSlot.tsx). */
+export function slotParts(name: SlotName) {
+  return modules.filter(enabled).flatMap((m) => (m.slots?.[name] ?? []).map((C, i) => ({ C, key: `${m.id}-${i}` })))
 }

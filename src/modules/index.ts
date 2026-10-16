@@ -3,4 +3,5 @@ import { registerModules } from './ext-core/registry'
 
 registerModules([])
 
-export { ExtSlot, extElement, extNavigation, extPlannedScreens } from './ext-core/registry'
+export { extElement, extNavigation, extPlannedScreens } from './ext-core/registry'
+export { ExtSlot } from './ext-core/ExtSlot'
