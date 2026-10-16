@@ -196,6 +196,11 @@ async def main() -> None:
         two = await asyncio.gather(*(c.post("/ext/wage/withdraw", headers=H["nurlan"], json={"amount": 5000}) for _ in range(3)))
         check(sorted(x.status_code for x in two) == [201, 201, 422], "wage: concurrent withdrawals respect limit", [x.status_code for x in two])
 
+        # --- ladder
+        lad = (await c.get("/ext/ladder/me", headers=H["aigerim"])).json()
+        check(lad["current"]["code"] == "SORT-1" and lad["next"]["code"] == "SORT-2" and lad["raiseToNextMin"] == 35000, "ladder: aigerim SORT-1 -> SORT-2 +35 000", lad)
+        check((await c.get("/ext/ladder/grades", headers=H["aigerim"])).status_code == 403, "ladder: employee cannot list all grades")
+
         # --- hr console
         cards = {x["employeeId"]: x for x in (await c.get("/ext/hr/risks?country=KZ", headers=H["daniyar"])).json()["items"]}
         check({"emp-aigerim", "emp-nurlan", "emp-asel"} <= set(cards), "radar: 3+ people at risk", list(cards))

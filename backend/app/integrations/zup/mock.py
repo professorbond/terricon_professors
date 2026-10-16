@@ -37,6 +37,7 @@ class MockZup:
             row.vacation_as_of,
             row.incidents_last_date,
             row.planned_shifts_per_month,
+            row.grade_since,
         )
 
     async def list_recent_offers(self, session: AsyncSession, since: datetime) -> list[HireOffer]:

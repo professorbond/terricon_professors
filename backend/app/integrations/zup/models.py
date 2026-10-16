@@ -32,6 +32,7 @@ class ZupHrAttrs(Base):
 
     employee_id: Mapped[str] = mapped_column(ForeignKey("employees.id"), primary_key=True)
     grade_code: Mapped[str] = mapped_column(String(32))
+    grade_since: Mapped[date | None] = mapped_column(default=None)
     last_salary_review_date: Mapped[date | None] = mapped_column(default=None)
     vacation_days_left: Mapped[int]
     vacation_as_of: Mapped[date]
