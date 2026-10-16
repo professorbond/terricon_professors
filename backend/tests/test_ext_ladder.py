@@ -37,6 +37,7 @@ async def test_progress_grows_after_course_and_notifies(client, login):
     assert lad["criteriaDone"] == before + 1 and lad["remainingCourses"] == 0 and lad["ready"] is True
     note = next(n for n in (await client.get("/api/notifications?unreadOnly=true", headers=h)).json()["items"] if n["kind"].startswith("ladder."))
     assert note["kind"] == "ladder.ready" and "Старший сортировщик" in note["message"]
+    assert note["target"] == {"kind": "course", "courseId": "course-safety"}  # NotificationTarget фронтенда
 
 
 async def test_nurlan_not_ready_due_to_incident(client, login):

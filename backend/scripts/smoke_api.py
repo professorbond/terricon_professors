@@ -194,7 +194,16 @@ async def main() -> None:
         r = await c.post("/ext/wage/withdraw", headers=H["aigerim"], json={"amount": 10_000_000})
         check(r.json().get("code") == "AMOUNT_EXCEEDS_AVAILABLE", "wage: over limit rejected")
         two = await asyncio.gather(*(c.post("/ext/wage/withdraw", headers=H["nurlan"], json={"amount": 5000}) for _ in range(3)))
-        check(sorted(x.status_code for x in two) == [201, 201, 422], "wage: concurrent withdrawals respect limit", [x.status_code for x in two])
+        check(sorted(x.status_code for x in two) == [201, 201, 422], "wage: concurrent withdrawals respect count limit", [x.status_code for x in two])
+        # 10 параллельных выводов по сумме: HR временно снимает лимит по количеству
+        wp = next(p for p in (await c.get("/ext/policies", headers=H["daniyar"])).json() if p["requestType"] == "wage_access")
+        await c.put(f"/ext/policies/{wp['id']}", headers=H["daniyar"], json={"wageMaxPerPeriod": 20})
+        av = (await c.get("/ext/wage/summary", headers=H["asel"])).json()["available"]
+        ten = await asyncio.gather(*(c.post("/ext/wage/withdraw", headers=H["asel"], json={"amount": 20000}) for _ in range(10)))
+        got = (await c.get("/ext/wage/summary", headers=H["asel"])).json()
+        ok_n = sum(x.status_code == 201 for x in ten)
+        check(ok_n == av // 20000 and got["withdrawn"] == ok_n * 20000 <= av, "wage: 10 parallel withdrawals never exceed available", (av, ok_n, got["withdrawn"]))
+        await c.put(f"/ext/policies/{wp['id']}", headers=H["daniyar"], json={"wageMaxPerPeriod": 2})
 
         # --- ladder
         lad = (await c.get("/ext/ladder/me", headers=H["aigerim"])).json()
