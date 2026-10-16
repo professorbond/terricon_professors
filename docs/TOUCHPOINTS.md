@@ -12,3 +12,4 @@
 | 5 | `src/pages/dashboard/DashboardPage.tsx` | `<ExtSlot name="home.widgets" />` после блока «В движении» | Блоки «Мои гарантии», «Зарплата по факту» на главной |
 | 6 | `src/pages/profile/ProfilePage.tsx` | `<ExtSlot name="profile.sections" />` после карточки профиля | «Открытая лестница» в профиле |
 | 7 | `src/features/leave/components/RequestList.tsx` | `<ExtSlot name="request.list.badge" requestId=…/>` рядом со статусом | Бейдж срока («Ответ до …») в списке заявок |
+| 8 | `src/pages/requests/RequestDetailPage.tsx` | `<ExtSlot name="request.card.badges" requestId=…/>` в строке статуса | Бейдж срока в карточке заявки |

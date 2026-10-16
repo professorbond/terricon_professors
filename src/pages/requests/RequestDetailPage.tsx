@@ -14,6 +14,7 @@ import { DecisionPanel } from '@/features/leave/components/DecisionPanel'
 import { formatDate, formatTimestamp } from '@/features/leave/dates'
 import { nextStep } from '@/features/leave/presentation'
 import type { RequestOptions } from '@/services/contracts'
+import { ExtSlot } from '@/modules'
 
 export default function RequestDetailPage({ manager = false }: { manager?: boolean }) {
   const { requestId = '' } = useParams()
@@ -28,7 +29,7 @@ export default function RequestDetailPage({ manager = false }: { manager?: boole
     <WorkspaceHeading index="L–01 / ОТПУСК" title={request?.number ?? 'Маршрут заявки'}>{request ? `${formatDate(request.startDate)} — ${formatDate(request.endDate)} · ${request.requestedDays} календ. дн.` : 'История и движение вашей заявки.'}</WorkspaceHeading>
     {!request ? <QueryState problem={query.problem} retry={query.refresh} /> : <>
       {params.get('created') === '1' && request.status === 'Submitted' && request.employeeId === user?.id && <SubmissionConfirmation request={request} />}
-      <div className="request-status-line"><StatusBadge status={request.status} /><span>{nextStep(request)}</span><span className="eyebrow">ВЕРСИЯ {request.version.toString().padStart(2, '0')}</span></div>
+      <div className="request-status-line"><StatusBadge status={request.status} /><ExtSlot name="request.card.badges" requestId={request.id} /><span>{nextStep(request)}</span><span className="eyebrow">ВЕРСИЯ {request.version.toString().padStart(2, '0')}</span></div>
       <div id="flow-map" tabIndex={-1}><JanaFlowMap request={request} /></div>
       {canDecide && <DecisionPanel key={request.id} request={request} />}
       <div className="request-detail-grid"><RequestHistory request={request} />
