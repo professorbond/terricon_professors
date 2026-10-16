@@ -1,4 +1,4 @@
-export type LeaveStatus = 'Submitted' | 'Approved' | 'Rejected' | 'Cancelled'
+export type LeaveStatus = 'Submitted' | 'Approved' | 'Rejected' | 'Cancelled' | 'Escalated'
 
 export interface LeaveRequestEvent {
   readonly id: string
