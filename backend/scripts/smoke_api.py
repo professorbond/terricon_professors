@@ -233,6 +233,14 @@ async def main() -> None:
         a = (await c.post("/ai/ask", headers=H["aigerim"], json={"question": "Как оплачиваются ночные смены?"})).json()
         check(a["answered"] and a["sources"][0]["sourceLabel"].startswith("Внутреннее правило"), "kb gaps: published rule answers", a)
 
+        # --- shifts
+        mine = (await c.get("/ext/shifts/my", headers=H["aigerim"])).json()["items"]
+        await c.post(f"/ext/shifts/{mine[0]['id']}/offer", headers=H["aigerim"])
+        rs = await asyncio.gather(*(c.post(f"/ext/shifts/{mine[0]['id']}/take", headers=H[x]) for x in ("asel", "nurlan")))
+        check(sorted(x.status_code for x in rs) == [200, 409], "shifts: two takers race -> one wins", [x.status_code for x in rs])
+        op = next(x for x in (await c.get("/ext/shifts/available", headers=H["asel"])).json()["items"] if x["status"] == "open")
+        check(op["payPreview"] == 12000, "shifts: open shift +12 000")
+
         # --- notifications
         other = (await c.get("/notifications", headers=H["erlan"])).json()["items"][0]["id"]
         check((await c.post(f"/notifications/{other}/read", headers=H["aigerim"])).status_code == 404, "cannot read other's notification")
