@@ -8,7 +8,7 @@ flowchart LR
   subgraph Backend[FastAPI · backend/]
     API[Роутеры /api/*<br/>JWT + RBAC на каждом запросе]
     CORE[core: org · requests engine · notifications · events · ticks · clock]
-    MOD[modules: leave · academy · ai_jana · ext_*]
+    MOD[modules: profile · leave · hr_question · academy · ai_jana<br/>ext_*: guarantees · wage · hr_console · ladder · grievance · xray · kb_gaps · shifts]
     INT[integrations]
   end
   DB[(PostgreSQL 16)]
@@ -59,3 +59,29 @@ flowchart LR
 | `notifications` | Уведомления (ключи i18n + параметры, рендер на языке получателя) |
 | `documents`, `payouts` | Mock Documentolog и банка |
 | `demo_state` | Смещение демо-часов |
+
+## Модули и связи
+
+Модули не импортируют внутренности друг друга. Они связаны через события каркаса, движок заявок и публичные сервисы.
+
+| Модуль | Флаг | Подписан на / использует | Публикует |
+|---|---|---|---|
+| `profile` | — | точка расширения профиля (поля от других модулей) | — |
+| `leave` | — | движок заявок, `request.before_decision` (перепроверка остатка), `request.decided` → приказ в Documentolog | — |
+| `hr_question` | — | движок заявок (согласующий — HR) | — |
+| `academy` | — | — | `academy.course_completed`, `academy.assigned` |
+| `ai_jana` | — | база знаний страны, профиль (свои данные из 1С), `integrations/llm` | `ai.unanswered`; публичный сервис базы |
+| `ext_guarantees` | `guarantees` | `request.created` (срок), `request.before_decision` (отказ только с причиной), тик (истёкшие сроки) | бейдж в карточке заявки; публичный сервис политик |
+| `ext_wage` | `wage_access` | табель 1С, политики, Documentolog, банк | тип заявки `wage_access` |
+| `ext_hr_console` | `hr_console` | заявки, гарантии, офферы 1С, тик. **Не читает** выводы ЗП и вопросы к AI | пересмотры зарплаты (сервис для лестницы) |
+| `ext_ladder` | `ladder` | `academy.course_completed`, 1С, пересмотры радара | — |
+| `ext_grievance` | `grievance` | движок заявок, гарантии (срок 72 ч) | — |
+| `ext_xray` | `xray` | заявки, гарантии, радар | — |
+| `ext_kb_gaps` | `kb_gaps` | `ai.unanswered`, публичный сервис базы AI | черновики и публикация правил |
+| `ext_shifts` | `shifts` | ставка из 1С | — |
+
+## Конкурентность
+
+Транзакция коммитится до отправки ответа. Решения, отзыв, вывод денег и взятие смены блокируют свою строку.
+Подача заявок сериализуется по сотруднику (`FOR NO KEY UPDATE`), номера выдаёт атомарный счётчик.
+Всё это проверяется в `scripts/smoke_api.py` параллельными запросами на Postgres.
