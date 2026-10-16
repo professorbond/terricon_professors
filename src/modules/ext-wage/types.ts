@@ -1,0 +1,3 @@
+export interface WageSummary { period: string; currency: string; shiftsWorked: number; nightShifts: number; shiftsPlanned: number; earned: number; limitPct: number; withdrawn: number; available: number; withdrawalsLeft: number; minAmount: number; maxPerPeriod: number }
+export interface WithdrawOut { requestId: string; requestNumber: string; amount: number; documentNumber: string; payoutId: string; summary: WageSummary }
+export interface Payslip { period: string; currency: string; lines: { code: string; label: string; amount: number }[]; gross: number; net: number; alreadyReceived: number; toBePaid: number; note: string }

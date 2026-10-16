@@ -1,0 +1,36 @@
+import { registerDictionary } from '../ext-core/i18n'
+
+registerDictionary(
+  {
+    'w.nav': 'Зарплата по факту', 'w.title': 'Зарплата по факту', 'w.index': 'ДЕНЬГИ / ПО ФАКТУ',
+    'w.lead': 'Деньги, которые вы уже заработали, — ваши сегодня, а не через месяц. Без заявления начальнику и без комиссии.',
+    'w.available': 'Доступно сейчас', 'w.worked': 'Отработано {n} из {plan} смен · заработано {earned}', 'w.get': 'Получить',
+    'w.tab.get': 'Получить', 'w.tab.why': 'Почему столько',
+    'w.amount': 'Сумма', 'w.hint': 'До {max} · минимум {min} · осталось выводов в этом месяце: {left}',
+    'w.quick.half': 'Половину', 'w.quick.all': 'Всё доступное', 'w.getAmount': 'Получить {amount}',
+    'w.confirm.title': 'Получить {amount}?', 'w.confirm.text': 'Деньги придут на вашу карту. Сумма будет учтена в день зарплаты. Комиссии нет.',
+    'w.confirm.ok': 'Подтвердить', 'w.sent.title': 'Деньги отправлены', 'w.sent.text': '{amount} уже в пути на вашу карту.',
+    'w.sent.request': 'Заявка {number} · одобрена системой', 'w.sent.doc': 'Документ «Аванс по заявлению» {number}', 'w.sent.again': 'Готово',
+    'w.facts.limit': 'Лимит', 'w.facts.limitValue': '{pct}% заработанного', 'w.facts.withdrawn': 'Уже получено в этом месяце', 'w.facts.left': 'Выводов осталось',
+    'w.none.title': 'Сейчас получить нельзя', 'w.none.text': 'Доступная сумма появится после отработанных смен. Лимит выводов обновится в начале месяца.',
+    'w.why.period': 'Расчёт за {period}', 'w.why.gross': 'Начислено', 'w.why.net': 'К выплате на руки', 'w.why.received': 'Уже получено по факту', 'w.why.toPay': 'Останется к выплате в день зарплаты',
+    'w.widget.eyebrow': '04 / ЗАРПЛАТА ПО ФАКТУ', 'w.widget.lead': 'Заработанное — ваше сегодня.',
+    'errors.AMOUNT_EXCEEDS_AVAILABLE': 'Больше доступного: можно до {available}.', 'errors.BELOW_MIN_AMOUNT': 'Минимальная сумма — {min}.', 'errors.LIMIT_PER_PERIOD': 'В этом месяце выводов больше не осталось.',
+  },
+  {
+    'w.nav': 'Нақты жалақы', 'w.title': 'Нақты жалақы', 'w.index': 'АҚША / НАҚТЫ',
+    'w.lead': 'Сіз тапқан ақша — бүгін сіздікі, бір айдан кейін емес. Басшыға өтінішсіз және комиссиясыз.',
+    'w.available': 'Қазір қолжетімді', 'w.worked': '{plan} ауысымнан {n} жұмыс істелді · табылды {earned}', 'w.get': 'Алу',
+    'w.tab.get': 'Алу', 'w.tab.why': 'Неге сонша',
+    'w.amount': 'Сома', 'w.hint': '{max} дейін · кемінде {min} · осы айда қалған: {left}',
+    'w.quick.half': 'Жартысын', 'w.quick.all': 'Барлығын', 'w.getAmount': '{amount} алу',
+    'w.confirm.title': '{amount} алу керек пе?', 'w.confirm.text': 'Ақша картаңызға түседі. Сома жалақы күні ескеріледі. Комиссия жоқ.',
+    'w.confirm.ok': 'Растау', 'w.sent.title': 'Ақша жіберілді', 'w.sent.text': '{amount} картаңызға жолда.',
+    'w.sent.request': '{number} өтінімі · жүйе мақұлдады', 'w.sent.doc': '«Өтініш бойынша аванс» құжаты {number}', 'w.sent.again': 'Дайын',
+    'w.facts.limit': 'Лимит', 'w.facts.limitValue': 'табыстың {pct}%', 'w.facts.withdrawn': 'Осы айда алынды', 'w.facts.left': 'Қалған шығару саны',
+    'w.none.title': 'Қазір алу мүмкін емес', 'w.none.text': 'Қолжетімді сома ауысымдардан кейін пайда болады. Лимит ай басында жаңарады.',
+    'w.why.period': '{period} есебі', 'w.why.gross': 'Есептелді', 'w.why.net': 'Қолға', 'w.why.received': 'Нақты алынды', 'w.why.toPay': 'Жалақы күні төленеді',
+    'w.widget.eyebrow': '04 / НАҚТЫ ЖАЛАҚЫ', 'w.widget.lead': 'Тапқаныңыз — бүгін сіздікі.',
+    'errors.AMOUNT_EXCEEDS_AVAILABLE': 'Қолжетімдіден көп: {available} дейін болады.', 'errors.BELOW_MIN_AMOUNT': 'Ең аз сома — {min}.', 'errors.LIMIT_PER_PERIOD': 'Осы айда шығару қалмады.',
+  },
+)
