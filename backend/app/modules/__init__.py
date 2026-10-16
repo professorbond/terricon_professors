@@ -12,4 +12,5 @@ MODULES: list[str] = [
     "hr_question",
     "academy",
     "ai_jana",
+    "ext_wage",
 ]

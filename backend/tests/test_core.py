@@ -88,11 +88,13 @@ async def test_employee_cannot_see_others(client, login):
 
 async def test_no_endpoints_to_change_official_data(app):
     """Официальные поля только для чтения: кроме языка, профиль не меняется (CLAUDE.md §5.1)."""
+    paths = app.openapi()["paths"]
+    assert "/api/profile/me" in paths and "/api/employees/{employee_id}" in paths  # проверка не пустая
     writes = {
-        (m, r.path)
-        for r in app.routes
-        for m in getattr(r, "methods", set())
-        if m in {"PUT", "PATCH", "DELETE"} and (r.path.startswith("/api/profile") or r.path.startswith("/api/employees") or r.path.startswith("/api/team"))
+        (method, path)
+        for path, ops in paths.items()
+        for method in ops
+        if method in {"put", "patch", "delete", "post"} and path.startswith(("/api/profile", "/api/employees", "/api/team"))
     }
     assert writes == set()
 
