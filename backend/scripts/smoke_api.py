@@ -224,6 +224,15 @@ async def main() -> None:
         check(not a["answered"] and a["escalateAvailable"], "ai: honest no-answer + escalate")
         check((await c.get("/ai/sources/kb-kz-vacation", headers=H["bakyt"])).status_code == 404, "ai: other country source 404")
 
+        # --- kb gaps
+        gl = (await c.get("/ext/kb/gaps?country=KZ", headers=H["daniyar"])).json()
+        check(gl and gl[0]["count"] >= 23 and "ночн" in gl[0]["label"].lower(), "kb gaps: night shifts group", [g["count"] for g in gl])
+        d = (await c.post(f"/ext/kb/gaps/{gl[0]['id']}/draft", headers=H["daniyar"])).json()
+        await c.put(f"/ext/kb/docs/{d['id']}", headers=H["daniyar"], json={"bodyMd": "## Оплата ночных смен\nНочные смены оплачиваются с доплатой 50% к ставке за смену."})
+        await c.post(f"/ext/kb/docs/{d['id']}/publish", headers=H["daniyar"])
+        a = (await c.post("/ai/ask", headers=H["aigerim"], json={"question": "Как оплачиваются ночные смены?"})).json()
+        check(a["answered"] and a["sources"][0]["sourceLabel"].startswith("Внутреннее правило"), "kb gaps: published rule answers", a)
+
         # --- notifications
         other = (await c.get("/notifications", headers=H["erlan"])).json()["items"][0]["id"]
         check((await c.post(f"/notifications/{other}/read", headers=H["aigerim"])).status_code == 404, "cannot read other's notification")

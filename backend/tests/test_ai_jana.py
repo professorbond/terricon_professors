@@ -38,6 +38,11 @@ async def logged_questions():
         return list(await s.scalars(select(KbQuestion)))
 
 
+async def new_questions(before):
+    ids = {q.id for q in before}
+    return [q for q in await logged_questions() if q.id not in ids]
+
+
 @pytest.mark.parametrize("question", GOOD)
 async def test_typical_questions_answered_with_source(client, login, question):
     out = await ask(client, await login("aigerim"), question)
@@ -48,19 +53,21 @@ async def test_typical_questions_answered_with_source(client, login, question):
 
 @pytest.mark.parametrize("question", OUT_OF_BASE)
 async def test_out_of_base_is_honest_no_answer_and_logged(client, login, question):
+    before = await logged_questions()
     out = await ask(client, await login("aigerim"), question)
     assert out["kind"] == "no-answer" and out["answered"] is False and out["sources"] == []
     assert out["escalation"] == "HR" and out["escalateAvailable"] is True and out["reason"] == "no_match"
-    rows = await logged_questions()
+    rows = await new_questions(before)
     assert [r.question for r in rows] == [question] and rows[0].answered is False and rows[0].country == "KZ"
 
 
 @pytest.mark.parametrize("question", OTHER_PERSON)
 async def test_other_people_data_refused_without_search(client, login, question):
+    before = await logged_questions()
     out = await ask(client, await login("aigerim"), question)
     assert out["reason"] == "other_person" and out["sources"] == [] and out["answered"] is False
     assert out["escalateAvailable"] is False
-    assert await logged_questions() == []  # поиск не запускался
+    assert await new_questions(before) == []  # поиск не запускался
 
 
 async def test_process_questions_about_manager_are_not_refused(client, login):
@@ -79,11 +86,12 @@ async def test_kz_and_kg_get_different_sources(client, login):
 
 
 async def test_own_data_from_zup_only_for_self(client, login):
+    before = await logged_questions()
     out = await ask(client, await login("aigerim"), "Сколько у меня осталось дней отпуска?")
     assert out["answered"] and out["sources"][0]["articleId"] == "zup-own-data" and "21" in out["text"]
     out = await ask(client, await login("aigerim"), "Какой у меня оклад?")
     assert "240 000 ₸" in out["text"]
-    assert await logged_questions() == []  # личные вопросы не логируются
+    assert await new_questions(before) == []  # личные вопросы не логируются
 
 
 async def test_sources_endpoint_country_isolation(client, login):
