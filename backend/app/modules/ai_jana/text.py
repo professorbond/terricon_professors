@@ -27,6 +27,22 @@ STOPWORDS = {
 }
 
 
+# Казахские слова → русские основы базы знаний (база в демо на русском; без LLM это позволяет найти раздел)
+KK_TO_RU = {
+    "демалыс": "отпуск", "жалақы": "зарплата", "жалақ": "зарплата", "ауысым": "смена", "түнгі": "ночной",
+    "күн": "дней", "ақы": "оплата", "төле": "оплата", "үстеме": "сверхурочная", "шағым": "обращение",
+    "өтінім": "заявка", "курс": "курс", "сұрыптаушы": "сортировщик", "мерзім": "срок", "бас тарт": "отказ",
+}
+KK_STOP = {"қанша", "қалай", "қашан", "бар", "ма", "ме", "па", "пе", "ба", "бе", "не", "неше", "қандай", "маған", "менің"}
+
+
+def from_kk(word: str) -> str:
+    for kk, ru in KK_TO_RU.items():
+        if word.startswith(kk):
+            return ru
+    return word
+
+
 @lru_cache(maxsize=20000)
 def stem(word: str) -> str:
     return _stemmer.stemWord(word.lower().replace("ё", "е"))
@@ -38,4 +54,9 @@ def words(text: str) -> list[str]:
 
 def terms(text: str) -> list[str]:
     """Значимые основы слов (без стоп-слов) — для BM25 и покрытия запроса."""
-    return [stem(w) for w in words(text) if w not in STOPWORDS and len(w) > 1]
+    out = []
+    for w in words(text):
+        if w in STOPWORDS or w in KK_STOP or len(w) <= 1:
+            continue
+        out.append(stem(from_kk(w)))
+    return out
