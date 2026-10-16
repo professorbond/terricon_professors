@@ -73,7 +73,8 @@ async def detect(session: AsyncSession, emp: Employee, now: datetime) -> dict[st
 
     # 5. Вопрос к HR / обращение без решения дольше срока
     for r in reqs:
-        if r.type in HR_ADDRESSED and r.status in OPEN_STATUSES:
+        # Анонимное обращение не привязываем к человеку — иначе радар раскроет автора
+        if r.type in HR_ADDRESSED and r.status in OPEN_STATUSES and not r.payload.get("anonymous"):
             g = await guarantee_for(session, r.id)
             if g and now > g.deadline_at:
                 found["open_grievance"] = {"number": r.number, "days": (now - r.created_at).days}
