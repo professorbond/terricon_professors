@@ -10,3 +10,4 @@
 | 3 | `src/app/routes.ts`, `src/app/router.tsx` | Каталог экранов дополняется `extPlannedScreens()`; в `DemoScreen` перед заглушкой — `extElement(screen.id)` | Маршруты ext-экранов, а также экраны Academy и AI Jana вместо заглушек `PlannedPage` |
 | 4 | `src/layouts/navigation.ts` | `getNavigation(role)` = его группы + `extNavigation(role)`; тело функции переименовано в `baseNavigation` | Пункты меню ext-фич отдельной группой «Сервисы JanaМен» (по ролям и флагам) |
 | 5 | `src/pages/dashboard/DashboardPage.tsx` | `<ExtSlot name="home.widgets" />` после блока «В движении» | Блоки «Мои гарантии», «Зарплата по факту» на главной |
+| 6 | `src/pages/profile/ProfilePage.tsx` | `<ExtSlot name="profile.sections" />` после карточки профиля | «Открытая лестница» в профиле |
