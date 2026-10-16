@@ -14,12 +14,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import clock
 from app.core.auth import hash_password
+from app.core.demo.models import DemoState
 from app.core.notifications.models import Notification
 from app.core.org.models import Country, Employee, Unit
 from app.integrations.zup.models import ZupHireOffer, ZupHrAttrs, ZupSalary, ZupTimesheet
 
 SEED_DIR = Path(__file__).parent
 DEMO_PASSWORD = "demo1234"
+# Увеличивать, когда меняется seed: демо-база пересоздастся при следующем старте
+SEED_VERSION = 3
 
 
 def load_json(relative: str) -> Any:
@@ -54,6 +57,11 @@ def at_time(moment: datetime):
 
 async def is_seeded(session: AsyncSession) -> bool:
     return bool(await session.scalar(select(func.count()).select_from(Employee)))
+
+
+async def stored_seed_version(session: AsyncSession) -> int:
+    state = await session.get(DemoState, 1)
+    return state.seed_version if state else 0
 
 
 async def seed_core(session: AsyncSession) -> None:
@@ -139,6 +147,11 @@ async def run_seed(session: AsyncSession, modules: list) -> None:
     for module in modules:
         if module.seed is not None:
             await module.seed(session)
+    state = await session.get(DemoState, 1)
+    if state is None:
+        state = DemoState(id=1, offset_seconds=0)
+        session.add(state)
+    state.seed_version = SEED_VERSION
     # История seed старше суток считается прочитанной — в колокольчике только свежее
     await session.execute(
         update(Notification)
