@@ -1,0 +1,232 @@
+# JanaМен API: контракт для фронтенда
+
+Это живой документ, он обновляется после каждого этапа. Полные схемы лежат в Swagger: `http://localhost:8000/docs`.
+Поля и типы совпадают с `src/services/contracts.ts` и `src/features/*/model.ts`. Всё, что от них
+отличается, перечислено в разделе [«Расхождения»](#расхождения-с-контрактами-фронтенда).
+
+> **Состояние на 17.10:** заглушки Academy и AI Jana уже опубликованы. Пути с ✅ в разделах «Профиль», «Отпуск», «Заявки», «Вопрос к HR» и «Демо-вход по роли» описаны в финальной форме, на сервере они появятся с PR «Этап 1». До него отпуск доступен по старым путям `/api/leave/requests/*`.
+
+**Статусы:** ✅ работает · 🟡 заглушка с фиксированным ответом (заголовок `X-Stub: true`), формат финальный · ⏳ будет.
+
+## Общее
+
+- Базовый URL: `VITE_API_URL` (в compose `http://localhost:8000`). CORS открыт для `:5173` и `:4173`.
+- Авторизация через заголовок `Authorization: Bearer <accessToken>`. Пользователь всегда определяется из токена, поэтому `employeeId` и роль из тела запроса не принимаются.
+- JSON в camelCase. Даты `YYYY-MM-DD`, время в ISO 8601 с зоной (UTC). Деньги — целые числа в валюте страны.
+- Списки отдаются как `Page<T> = {items: T[], nextCursor: null}`. Пагинации пока нет.
+- Ошибка всегда имеет форму `ServiceProblem` с кодами:
+  ```json
+  {"kind": "validation", "code": "INVALID_DATES", "message": "Дата начала не может быть в прошлом",
+   "messageKey": "errors.INVALID_DATES", "fieldErrors": {"startDate": ["..."]}, "data": {}}
+  ```
+  | kind | HTTP |
+  |---|---|
+  | `unauthenticated` | 401 |
+  | `forbidden` | 403 |
+  | `not-found` | 404 |
+  | `validation` | 422 |
+  | `conflict` | 409 |
+  | `unavailable` | 503 |
+- Роли: `Employee | Manager | HRAdmin`.
+- Статусы заявок: `Submitted | Approved | Rejected | Escalated | Cancelled`.
+- Учётки (пароль `demo1234`):
+  | login | Роль | Страна | Кто |
+  |---|---|---|---|
+  | `aigerim` | Employee | KZ | основной персонаж демо |
+  | `nurlan` | Employee | KZ | — |
+  | `asel` | Employee | KZ | другая команда |
+  | `erlan` | Manager | KZ | Айгерим и Нурлан |
+  | `gulnara` | Manager | KZ | Асель |
+  | `daniyar` | HRAdmin | KZ | — |
+  | `bakyt` | Employee | KG | — |
+  | `aibek` | Manager | KG | Бакыт |
+
+---
+
+## Вход и сессия — `IAuthService`
+
+| ✅ | Метод | Путь | Роли | Запрос → Ответ |
+|---|---|---|---|---|
+| ✅ | POST | `/api/auth/login` | все | `{login, password}` → `{accessToken, tokenType, user: User}` |
+| ✅ | GET | `/api/auth/me` | все | → `User {id, displayName, role, country, lang}`. Для `getSession`: `employeeId = id` |
+| ✅ | PUT | `/api/auth/me/lang` | все | `{lang: "ru"\|"kk"}` → `User` |
+| ✅ | POST | `/api/demo/login-as` | демо | `{role: "Employee"\|"Manager"\|"HRAdmin"}` или `{login}` → как `/login`. Для `signInDemo(role)`: Employee → aigerim, Manager → erlan, HRAdmin → daniyar |
+| — | — | `signOut` | — | Сервер не нужен: токен без состояния, фронт его просто удаляет |
+
+Ошибки: `INVALID_CREDENTIALS` (401), `UNAUTHENTICATED` (401, нет токена или он истёк).
+
+## Профиль — `IProfileService`
+
+| ✅ | Метод | Путь | Роли | Ответ |
+|---|---|---|---|---|
+| ✅ | GET | `/api/profile/me` | все | `EmployeeProfile` |
+| ✅ | GET | `/api/team?unitId=&country=` | Manager (своя команда), HRAdmin (все, фильтры) | `Page<EmployeeProfile>` |
+| ✅ | GET | `/api/employees/{id}` | сам; руководитель своей команды; HR | `EmployeeProfile`. Чужая команда → 403 |
+
+```ts
+EmployeeProfile = {
+  id, displayName, company, position, department, manager: {id, displayName} | null, hiredOn,
+  leaveBalance: { days, asOf, pendingDays, availableDays },   // days = остаток 1С − одобренные; available = days − на рассмотрении
+  role, country, lang, unitId, unitKind, qualification, gradeCode,
+  monthlyBase: number | null,          // только сам и HR, руководителю null
+  assignedTraining: { courseId, title, status, lessonsPercent, scorePercent, dueDate }[],  // ⏳ заполнится на этапе 2
+  unreadNotifications: number
+}
+```
+
+Изменять официальные поля нельзя: таких эндпоинтов нет. Менять можно только язык.
+
+## Отпуск — `ILeaveRequestService` (тип заявки `vacation`)
+
+| ✅ | Метод | Путь | Роли | Запрос → Ответ |
+|---|---|---|---|---|
+| ✅ | POST | `/api/leave` | все | `SubmitLeaveInput {submissionKey, startDate, endDate, comment}` → `LeaveRequest` (201). Повтор с тем же `submissionKey` вернёт ту же заявку |
+| ✅ | GET | `/api/leave/my` | все | `Page<LeaveRequest>` (`listMine`) |
+| ✅ | GET | `/api/leave/pending` | Manager, HRAdmin | Открытые, где пользователь согласующий (`listPendingApprovals`) |
+| ✅ | GET | `/api/leave/team` | Manager (своя команда), HRAdmin (все) | Все статусы (`listTeam`) |
+| ✅ | GET | `/api/leave/balance` | все | `{days, asOf, pendingDays, availableDays}` |
+| ✅ | GET | `/api/leave/{id}` | владелец, руководитель команды, HR | `LeaveRequest` (`getById`) |
+| ✅ | POST | `/api/leave/{id}/decision` | согласующий | `LeaveDecision {decision, expectedVersion, comment?, reasonCode?}` → `LeaveRequest` (`decide`) |
+
+```ts
+LeaveRequest = {
+  id, number /* JL-2026-0001 */, type: "Leave", submissionKey, employeeId, employeeName, managerId, managerName,
+  startDate, endDate, requestedDays, comment, status, createdAt, version,
+  history: { id, status, occurredAt, actorLabel, actorId /* "system" для системных событий */, comment, event }[],
+  // расширение:
+  decisionComment, decisionReasonCode, decidedBySystem,
+  documents: { id, kind, number }[],      // «Приказ на отпуск» после одобрения
+  permissions: { canDecide, canCancel }   // показывать кнопки по ним, а не по роли
+}
+```
+
+| Ошибка | Код | HTTP | Когда |
+|---|---|---|---|
+| Неверные даты | `INVALID_DATES` | 422 | Начало в прошлом или конец раньше начала; `fieldErrors.startDate` или `endDate` |
+| Не хватает дней | `INSUFFICIENT_BALANCE` | 422 | `data.available` — сколько доступно |
+| Пересечение | `OVERLAP` | 409 | Пересекается с заявкой на рассмотрении или одобренной; `data.number` |
+| Нет причины отказа | `COMMENT_REQUIRED` | 422 | Отказ без комментария |
+| Устаревшая версия | `STALE_VERSION` | 409 | `data.version` — текущая версия |
+| Уже решено | `ALREADY_DECIDED` | 409 | Повторное решение |
+| Нет прав | `FORBIDDEN` | 403 | Чужая команда или своя заявка |
+
+`history[].event`: `created | approved | rejected | escalated | cancelled | document_registered`.
+
+## Заявки любых типов («Мои заявки», «Входящие», реестр HR)
+
+Здесь лежат все заявки: отпуск, вопрос к HR, позже «Зарплата по факту». «Мои заявки» лучше строить на этом API.
+
+| ✅ | Метод | Путь | Роли | Ответ |
+|---|---|---|---|---|
+| ✅ | GET | `/api/requests/my?type=&status=` | все | `Page<RequestOut>` |
+| ✅ | GET | `/api/requests/inbox?status=open\|all&type=` | Manager: своя команда; HRAdmin: адресованные HR и переданные HR | `Page<RequestOut>` |
+| ✅ | GET | `/api/requests/all?type=&status=&unitId=&country=&from=&to=` | HRAdmin | `Page<RequestOut>`. `from`/`to` — дата создания |
+| ✅ | GET | `/api/requests/types` | все | `{code, title, approver, cancellable}[]` |
+| ✅ | GET | `/api/requests/{id}` | владелец, руководитель команды, HR | `RequestOut` |
+| ✅ | POST | `/api/requests/{id}/decide` | согласующий | `{decision, expectedVersion?, reasonCode?, comment?}` → `RequestOut` |
+| ✅ | POST | `/api/requests/{id}/cancel` | автор, пока `Submitted` | `RequestOut` |
+
+```ts
+RequestOut = { id, number, type /* vacation | hr_question | … */, typeTitle, status, employeeId, employeeName,
+  approverKind /* manager | hr | none */, approverId, approverName, payload, submissionKey, createdAt, decidedAt,
+  decidedBySystem, decisionReasonCode, decisionComment, version, history[], documents[], permissions }
+```
+
+## Вопрос к HR (тип `hr_question`)
+
+| ✅ | Метод | Путь | Роли | Запрос → Ответ |
+|---|---|---|---|---|
+| ✅ | POST | `/api/hr-questions` | все | `{question, aiContext?}` → `RequestOut` (201), уведомление HR |
+
+HR отвечает через `POST /api/requests/{id}/decide {decision: "Approved", comment: "<ответ>"}`. Комментарий
+обязателен: `COMMENT_REQUIRED`. Автор получает уведомление с ответом. Кнопка «Спросить HR» в AI Jana вызывает этот эндпоинт.
+
+## Уведомления — `INotificationService`
+
+| ✅ | Метод | Путь | Ответ |
+|---|---|---|---|
+| ✅ | GET | `/api/notifications?unreadOnly=true` | `Page<Notification>` (`listMine`) |
+| ✅ | GET | `/api/notifications/unread-count` | `{unread}` |
+| ✅ | POST | `/api/notifications/{id}/read` | `Notification` (`markRead`); чужое → 404 |
+| ✅ | POST | `/api/notifications/read-all` | `{unread: 0}` |
+
+```ts
+Notification = { id, userId, title, message, createdAt, readAt, target: {kind:"request",requestId} | {kind:"course",courseId} | null,
+  // расширение: ключи i18n, чтобы фронт мог перевести сам
+  kind, titleKey, bodyKey, params, link }
+```
+
+`kind`:
+- `request.created` — согласующему;
+- `request.decided` — автору;
+- `request.escalated`;
+- `academy.assigned`;
+- `academy.completed`.
+
+`title` и `message` уже переведены на язык пользователя (`lang`).
+
+## Jana Academy — `AcademyService` (🟡 заглушка до этапа 2)
+
+| | Метод | Путь | Роли | Ответ |
+|---|---|---|---|---|
+| 🟡 | GET | `/api/academy/courses` | все | `Page<CourseSummary>` — каталог |
+| 🟡 | GET | `/api/academy/my` | все | `Page<AssignedCourse>` (`listAssigned`) = `CourseSummary` + `{assignedAt, dueDate, progress}` |
+| 🟡 | GET | `/api/academy/courses/{id}` | все | `CourseDetail` = `CourseSummary` + `{passingScore, assigned, lessons[{id, ord, title, contentMd, completed}], questions[{id, ord, text, options[]}], progress}`. **Правильных ответов в нём нет** |
+| 🟡 | GET | `/api/academy/courses/{id}/progress` | все | `CourseProgress` (`getProgress`) |
+| 🟡 | POST | `/api/academy/lessons/{lessonId}/complete` | все | `CourseProgress` (`completeLesson`: `courseId` в пути не нужен) |
+| 🟡 | POST | `/api/academy/courses/{id}/submit` | все | `{answers: number[]}` → `{score, passed, passingScore, correct, total, progress}` |
+| 🟡 | POST | `/api/academy/assignments` | Manager (своей команде), HRAdmin | `{employeeId, courseId, dueDate?}` → `Assignment` (201) |
+| 🟡 | GET | `/api/academy/progress?unitId=` | Manager (своя команда), HRAdmin | `Page<{employeeId, employeeName, unitId, courseId, courseTitle, dueDate, progress}>` |
+
+```ts
+CourseProgress = { courseId, completedLessonIds, totalLessons, status: "Assigned"|"InProgress"|"Completed",
+                   scorePercent, passed, lessonsPercent }
+```
+
+## AI Jana — `AssistantService` (🟡 заглушка до этапа 3)
+
+| | Метод | Путь | Ответ |
+|---|---|---|---|
+| 🟡 | POST | `/api/ai/ask` | `{question, lang?}` → `AskOut` |
+| 🟡 | GET | `/api/ai/sources/{articleId}` | `KnowledgeArticle {id, title, body, updatedAt, country, sourceLabel}` (`getSource`) |
+
+```ts
+AskOut = {
+  kind: "grounded" | "no-answer",                  // = AssistantAnswer фронтенда
+  text: string | null,                             // grounded
+  message: string | null,                          // no-answer
+  sources: { articleId, title, section, updatedAt, sourceLabel }[],   // у grounded минимум один
+  escalation: "HR" | null,
+  answer, answered, escalateAvailable,             // формат CLAUDE.md
+  reason: "no_match" | "other_person_data" | null
+}
+```
+
+Ответ ищется **только по базе страны пользователя** (KZ/KG). Вопросы о чужих данных получают отказ без поиска.
+
+## Настройки и демо
+
+| ✅ | Метод | Путь | Ответ |
+|---|---|---|---|
+| ✅ | GET | `/api/settings` | `{features[], demoMode, country, lang, llmAvailable}` |
+| ✅ | GET | `/api/health` | `{status}` |
+| ✅ | GET | `/api/demo/personas` | `{login, displayName, role, country, position}[]` |
+| ✅ | GET | `/api/demo/state` | `{now, offsetHours}` |
+| ✅ | POST | `/api/demo/advance-time` | `{hours}` → сдвиг часов и тик сроков |
+| ✅ | POST | `/api/demo/reset` | Стереть данные и применить seed |
+
+---
+
+## Расхождения с контрактами фронтенда
+
+| # | Где | Фронтенд | Бэкенд | Нужна правка во фронте? |
+|---|---|---|---|---|
+| 1 | Статусы | `LeaveStatus` без `Escalated` | Есть `Escalated` (передано HR по сроку) | Да, когда подключим гарантии (этап 4). Для отпуска в KZ политика `auto_approve`, поэтому в демо `Escalated` у отпуска не появляется |
+| 2 | Остаток | Submitted не резервирует дни | `days` считается так же; дополнительно отдаются `pendingDays` и `availableDays`, и новая заявка проверяется по `availableDays` (CLAUDE.md §5.1) | Нет, `days` совместим |
+| 3 | `listAssigned` | `Page<CourseSummary>` | `Page<AssignedCourse>`, расширение `CourseSummary` | Нет |
+| 4 | `completeLesson(courseId, lessonId)` | два id | Путь только с `lessonId` | Нет, адаптер просто не передаёт `courseId` |
+| 5 | `AssistantAnswer` | `kind/text/message/escalation` | То же плюс поля CLAUDE.md | Нет |
+| 6 | `Notification` | `title/message` | То же, уже переведено, плюс ключи i18n | Нет |
+| 7 | `LeaveRequestEvent.actorId` | `string` | `"system"` для системных событий | Нет |
+| 8 | Имена из CLAUDE.md | — | Взяты имена фронтенда: роли `Employee/Manager/HRAdmin` вместо `employee/manager/hr`, статусы `Submitted…` вместо `pending…`, поля `startDate/endDate` вместо `date_from/date_to` | Нет |
+| 9 | `signOut` | метод сервиса | Эндпоинта нет: JWT без состояния | Нет |
