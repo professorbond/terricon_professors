@@ -1,5 +1,5 @@
 {
-  "_comment": "Даты относительно clock.today(): *_months_ago. vacation_as_of — 1 января текущего года. planned_shifts — план смен в месяц (у Айгерим 20: оклад 240 000 = 20 × 12 000).",
+  "_comment": "Даты относительно clock.today(): *_months_ago. vacation_as_of — 1 января текущего года. planned_shifts — план смен в месяц (у Айгерим 20: оклад 240 000 = 20 × 12 000). grade_months_ago — сколько месяцев в текущем грейде.",
   "rows": [
     {
       "login": "aigerim",
@@ -7,7 +7,8 @@
       "review_months_ago": 14,
       "vacation_days_left": 24,
       "incident_months_ago": null,
-      "planned_shifts": 20
+      "planned_shifts": 20,
+      "grade_months_ago": 16
     },
     {
       "login": "nurlan",
@@ -15,7 +16,8 @@
       "review_months_ago": 5,
       "vacation_days_left": 18,
       "incident_months_ago": 3,
-      "planned_shifts": 22
+      "planned_shifts": 22,
+      "grade_months_ago": 20
     },
     {
       "login": "asel",
@@ -23,7 +25,8 @@
       "review_months_ago": 8,
       "vacation_days_left": 26,
       "incident_months_ago": null,
-      "planned_shifts": 22
+      "planned_shifts": 22,
+      "grade_months_ago": 8
     },
     {
       "login": "erlan",
@@ -31,7 +34,8 @@
       "review_months_ago": 6,
       "vacation_days_left": 20,
       "incident_months_ago": null,
-      "planned_shifts": 22
+      "planned_shifts": 22,
+      "grade_months_ago": 30
     },
     {
       "login": "gulnara",
@@ -39,7 +43,8 @@
       "review_months_ago": 4,
       "vacation_days_left": 22,
       "incident_months_ago": null,
-      "planned_shifts": 22
+      "planned_shifts": 22,
+      "grade_months_ago": 40
     },
     {
       "login": "daniyar",
@@ -47,7 +52,8 @@
       "review_months_ago": 7,
       "vacation_days_left": 21,
       "incident_months_ago": null,
-      "planned_shifts": 22
+      "planned_shifts": 22,
+      "grade_months_ago": 20
     },
     {
       "login": "bakyt",
@@ -55,7 +61,8 @@
       "review_months_ago": 10,
       "vacation_days_left": 18,
       "incident_months_ago": null,
-      "planned_shifts": 22
+      "planned_shifts": 22,
+      "grade_months_ago": 14
     },
     {
       "login": "aibek",
@@ -63,7 +70,8 @@
       "review_months_ago": 9,
       "vacation_days_left": 20,
       "incident_months_ago": null,
-      "planned_shifts": 22
+      "planned_shifts": 22,
+      "grade_months_ago": 25
     }
   ]
 }

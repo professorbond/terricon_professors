@@ -46,8 +46,9 @@ async def test_pass_course_updates_profile_and_publishes_event(client, login):
     profile = (await client.get("/api/profile/me", headers=h)).json()
     safety = next(t for t in profile["assignedTraining"] if t["courseId"] == "course-safety")
     assert safety["status"] == "Completed" and safety["scorePercent"] == 100
-    note = (await client.get("/api/notifications?unreadOnly=true", headers=h)).json()["items"][0]
-    assert note["kind"] == "academy.completed" and note["target"] == {"kind": "course", "courseId": "course-safety"}
+    notes = (await client.get("/api/notifications?unreadOnly=true", headers=h)).json()["items"]
+    note = next(n for n in notes if n["kind"] == "academy.completed")
+    assert note["target"] == {"kind": "course", "courseId": "course-safety"}
 
     # Повторная сдача не публикует событие второй раз
     await client.post("/api/academy/courses/course-safety/submit", headers=h, json={"answers": [1, 1, 1, 0]})

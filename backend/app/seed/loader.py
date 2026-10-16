@@ -22,7 +22,7 @@ from app.integrations.zup.models import ZupHireOffer, ZupHrAttrs, ZupSalary, Zup
 SEED_DIR = Path(__file__).parent
 DEMO_PASSWORD = "demo1234"
 # Увеличивать, когда меняется seed: демо-база пересоздастся при следующем старте
-SEED_VERSION = 6
+SEED_VERSION = 7
 
 
 def load_json(relative: str) -> Any:
@@ -112,6 +112,7 @@ async def seed_zup(session: AsyncSession) -> None:
                 vacation_as_of=date(today.year, 1, 1),
                 incidents_last_date=months_ago(row["incident_months_ago"]),
                 planned_shifts_per_month=row.get("planned_shifts", 22),
+                grade_since=months_ago(row.get("grade_months_ago")),
             )
         )
     month_start = today.replace(day=1)

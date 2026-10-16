@@ -27,6 +27,7 @@ class HrAttrs:
     vacation_as_of: date
     incidents_last_date: date | None
     planned_shifts_per_month: int
+    grade_since: date | None = None
 
 
 @dataclass(frozen=True)

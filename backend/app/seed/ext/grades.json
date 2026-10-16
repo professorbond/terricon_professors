@@ -1,0 +1,12 @@
+{
+  "_comment": "Грейды и вилки (CLAUDE.md §11). Критерии на строке грейда — условия перехода на следующий. Вилки включает HR.",
+  "rows": [
+    {"code": "SORT-1", "country": "KZ", "band_min": 230000, "band_max": 270000, "next_grade_code": "SORT-2", "required_course_ids": ["course-returns", "course-safety"], "min_months_in_grade": 6, "min_months_no_incidents": 6},
+    {"code": "SORT-2", "country": "KZ", "band_min": 275000, "band_max": 320000, "next_grade_code": "LEAD-1", "required_course_ids": [], "min_months_in_grade": 12, "min_months_no_incidents": 12},
+    {"code": "LEAD-1", "country": "KZ", "band_min": 380000, "band_max": 460000, "next_grade_code": null, "required_course_ids": [], "min_months_in_grade": 0, "min_months_no_incidents": 0},
+    {"code": "HR-2", "country": "KZ", "band_min": 400000, "band_max": 520000, "next_grade_code": null, "required_course_ids": [], "min_months_in_grade": 0, "min_months_no_incidents": 0},
+    {"code": "KG-SORT-1", "country": "KG", "band_min": 32000, "band_max": 40000, "next_grade_code": "KG-SORT-2", "required_course_ids": ["course-safety"], "min_months_in_grade": 6, "min_months_no_incidents": 6},
+    {"code": "KG-SORT-2", "country": "KG", "band_min": 41000, "band_max": 50000, "next_grade_code": null, "required_course_ids": [], "min_months_in_grade": 0, "min_months_no_incidents": 0},
+    {"code": "KG-LEAD-1", "country": "KG", "band_min": 55000, "band_max": 70000, "next_grade_code": null, "required_course_ids": [], "min_months_in_grade": 0, "min_months_no_incidents": 0}
+  ]
+}
