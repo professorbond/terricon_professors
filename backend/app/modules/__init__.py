@@ -18,4 +18,5 @@ MODULES: list[str] = [
     "ext_hr_console",
     "ext_grievance",
     "ext_xray",
+    "ext_kb_gaps",
 ]
