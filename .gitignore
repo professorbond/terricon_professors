@@ -30,3 +30,10 @@ artifacts/
 *.njsproj
 *.sln
 *.sw?
+
+# Python / backend
+__pycache__
+*.pyc
+.venv
+.pytest_cache
+.ruff_cache

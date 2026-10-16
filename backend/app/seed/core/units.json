@@ -1,0 +1,7 @@
+[
+  {"id": "kz-almaty-sc", "country": "KZ", "kind": "sorting_center", "name": "Сортировочный центр Алматы", "parent_id": null},
+  {"id": "kz-almaty-sc-a", "country": "KZ", "kind": "sorting_center", "name": "СЦ Алматы · смена А", "parent_id": "kz-almaty-sc"},
+  {"id": "kz-almaty-sc-b", "country": "KZ", "kind": "sorting_center", "name": "СЦ Алматы · смена Б", "parent_id": "kz-almaty-sc"},
+  {"id": "kz-almaty-office", "country": "KZ", "kind": "office", "name": "Офис Алматы · HR", "parent_id": null},
+  {"id": "kg-bishkek-wh", "country": "KG", "kind": "warehouse", "name": "Склад Бишкек", "parent_id": null}
+]

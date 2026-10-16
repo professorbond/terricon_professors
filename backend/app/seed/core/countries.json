@@ -1,0 +1,4 @@
+[
+  {"code": "KZ", "name_ru": "Казахстан", "name_kk": "Қазақстан", "timezone": "Asia/Almaty", "currency": "KZT"},
+  {"code": "KG", "name_ru": "Кыргызстан", "name_kk": "Қырғызстан", "timezone": "Asia/Bishkek", "currency": "KGS"}
+]

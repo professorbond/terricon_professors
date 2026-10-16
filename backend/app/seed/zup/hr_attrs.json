@@ -1,0 +1,13 @@
+{
+  "_comment": "Даты относительно clock.today(): *_months_ago. vacation_as_of — 1 января текущего года.",
+  "rows": [
+    {"login": "aigerim", "grade_code": "SORT-1", "review_months_ago": 14, "vacation_days_left": 24, "incident_months_ago": null},
+    {"login": "nurlan", "grade_code": "SORT-1", "review_months_ago": 5, "vacation_days_left": 18, "incident_months_ago": 3},
+    {"login": "asel", "grade_code": "SORT-1", "review_months_ago": 8, "vacation_days_left": 26, "incident_months_ago": null},
+    {"login": "erlan", "grade_code": "LEAD-1", "review_months_ago": 6, "vacation_days_left": 20, "incident_months_ago": null},
+    {"login": "gulnara", "grade_code": "LEAD-1", "review_months_ago": 4, "vacation_days_left": 22, "incident_months_ago": null},
+    {"login": "daniyar", "grade_code": "HR-2", "review_months_ago": 7, "vacation_days_left": 21, "incident_months_ago": null},
+    {"login": "bakyt", "grade_code": "KG-SORT-1", "review_months_ago": 10, "vacation_days_left": 18, "incident_months_ago": null},
+    {"login": "aibek", "grade_code": "KG-LEAD-1", "review_months_ago": 9, "vacation_days_left": 20, "incident_months_ago": null}
+  ]
+}
