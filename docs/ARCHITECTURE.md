@@ -37,7 +37,7 @@ flowchart LR
 | 1С:ЗУП | `backend/app/integrations/zup/` | `MockZup` читает таблицы `zup_*` из seed | Реализовать `ZupPort` (OData или HTTP-сервис 1С: сотрудники, табель, начисления, остатки отпуска), вернуть её из `get_zup()`. Модули не меняются |
 | Documentolog | `backend/app/integrations/documentolog/` | Таблица `documents`, документ сразу «зарегистрирован» | Вызов API Documentolog в `create_document`, статус по webhook |
 | Банк | `backend/app/integrations/bank/` | Таблица `payouts`, всегда успех | API банка-партнёра для выплат «Зарплаты по факту» |
-| LLM | `backend/app/integrations/llm/` | Без ключа `None`: экстрактивный режим | `ANTHROPIC_API_KEY` в env, ключ только на сервере |
+| LLM (AI Jana) | `backend/app/integrations/llm/` | Claude (`claude-opus-5-5`, effort `low`, серверный фолбэк при отказе модели). Без ключа или при сбое — экстрактивный режим | `ANTHROPIC_API_KEY` в env, ключ только на сервере |
 
 ## Принципы
 

@@ -176,6 +176,17 @@ async def main() -> None:
         check(r.status_code == 201, "academy: manager assigns own team")
         check(any(n["kind"] == "academy.assigned" for n in (await c.get("/notifications", headers=H["asel"])).json()["items"]), "academy: assigned notification")
 
+        # --- ai jana
+        a = (await c.post("/ai/ask", headers=H["aigerim"], json={"question": "Сколько дней отпуска положено?"})).json()
+        check(a["answered"] and a["sources"][0]["articleId"] == "kb-kz-vacation", "ai: KZ answer with KZ source", a)
+        a = (await c.post("/ai/ask", headers=H["bakyt"], json={"question": "Сколько дней отпуска положено?"})).json()
+        check(a["answered"] and a["sources"][0]["articleId"] == "kb-kg-vacation", "ai: KG answer with KG source", a)
+        a = (await c.post("/ai/ask", headers=H["aigerim"], json={"question": "Какая зарплата у моего начальника?"})).json()
+        check(a["reason"] == "other_person" and not a["sources"], "ai: refuses other person's salary")
+        a = (await c.post("/ai/ask", headers=H["aigerim"], json={"question": "Как оплачиваются ночные смены?"})).json()
+        check(not a["answered"] and a["escalateAvailable"], "ai: honest no-answer + escalate")
+        check((await c.get("/ai/sources/kb-kz-vacation", headers=H["bakyt"])).status_code == 404, "ai: other country source 404")
+
         # --- notifications
         other = (await c.get("/notifications", headers=H["erlan"])).json()["items"][0]["id"]
         check((await c.post(f"/notifications/{other}/read", headers=H["aigerim"])).status_code == 404, "cannot read other's notification")

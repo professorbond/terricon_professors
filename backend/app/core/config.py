@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     # Включённые ext-фичи Даниила через запятую, "*" — все
     ext_features: str = "*"
     anthropic_api_key: str | None = None
-    anthropic_model: str = "claude-sonnet-5-5"
+    anthropic_model: str = "claude-opus-5-5"
 
     @property
     def cors_origin_list(self) -> list[str]:

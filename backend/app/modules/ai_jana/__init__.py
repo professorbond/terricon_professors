@@ -2,5 +2,6 @@
 
 from app.core.modules import BackendModule
 from app.modules.ai_jana.register import register
+from app.modules.ai_jana.seed import seed
 
-module = BackendModule(name="ai_jana", register=register, description="AI Jana")
+module = BackendModule(name="ai_jana", register=register, seed=seed, description="AI Jana")
