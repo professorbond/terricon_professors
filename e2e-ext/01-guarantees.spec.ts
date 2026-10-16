@@ -10,7 +10,7 @@ for (const width of [1440, 375]) {
     const widget = page.getByTestId('guarantees-widget')
     await expect(widget.getByRole('heading', { name: 'Мои гарантии' })).toBeVisible()
     await expect(widget).toContainText('Ответ по заявке JL-')
-    await expect(widget).toContainText('84 000 ₸')
+    await expect(page.getByTestId('wage-widget')).toContainText('84 000 ₸')
     await noOverflow(page)
     await widget.scrollIntoViewIfNeeded()
     await shot(page, `guarantees-home-${width}`)

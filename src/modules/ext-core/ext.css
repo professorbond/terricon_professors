@@ -62,3 +62,8 @@
   .ext-table th, .ext-table td { padding: .55rem .4rem; }
   .ext-actions .button { flex: 1 1 100%; }
 }
+.ext-wage-hero { align-items: stretch; }
+.ext-wage-hero .request-facts { align-self: center; }
+.ext-sent { display: flex; gap: 1rem; align-items: flex-start; padding: 1.5rem; }
+.ext-sent h2 { margin: 0 0 .35rem; }
+.confirmation-dialog h2 { margin-top: 0; }
