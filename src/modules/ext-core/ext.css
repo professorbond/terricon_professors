@@ -14,9 +14,10 @@
 .ext-muted { color: var(--text-secondary); }
 .ext-row { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1.25rem; }
 .ext-row--between { justify-content: space-between; }
-.ext-grid { display: grid; gap: 1px; background: var(--border-subtle); border-block: 1px solid var(--border-subtle); grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }
-.ext-grid > * { background: var(--surface-page); padding: 1.1rem 1rem; }
-.ext-figure { font-size: clamp(2.2rem, 6vw, 3.6rem); font-weight: 600; letter-spacing: -.04em; line-height: 1; color: var(--action-primary); font-variant-numeric: tabular-nums; }
+.ext-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); border-bottom: 1px solid var(--border-subtle); overflow: hidden; }
+/* Разделители — у самих ячеек: в неполном ряду нет «пустой» заливки */
+.ext-grid > * { min-width: 0; padding: 1.1rem 1rem; border-top: 1px solid var(--border-subtle); box-shadow: -1px 0 0 0 var(--border-subtle); overflow-wrap: anywhere; }
+.ext-figure { font-size: clamp(2rem, 3.4vw, 3rem); font-weight: 600; letter-spacing: -.04em; line-height: 1; color: var(--action-primary); font-variant-numeric: tabular-nums; }
 .ext-figure--ink { color: var(--text-primary); }
 .ext-figure small { font-size: .9rem; font-weight: 500; letter-spacing: 0; color: var(--text-secondary); margin-left: .35rem; }
 .ext-list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--border-subtle); }
