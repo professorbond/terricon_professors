@@ -4,7 +4,7 @@
 Поля и типы совпадают с `src/services/contracts.ts` и `src/features/*/model.ts`. Всё, что от них
 отличается, перечислено в разделе [«Расхождения»](#расхождения-с-контрактами-фронтенда).
 
-> **Состояние: этапы 1–2 готовы.** AI Jana пока заглушка (🟡), формат финальный.
+> **Состояние: этапы 1–3 готовы:** обязательная часть кейса целиком. Чек-лист — [`CASE_CHECKLIST.md`](CASE_CHECKLIST.md).
 
 **Статусы:** ✅ работает · 🟡 заглушка с фиксированным ответом (заголовок `X-Stub: true`), формат финальный · ⏳ будет.
 
@@ -204,12 +204,12 @@ CourseProgress = { courseId, completedLessonIds, totalLessons, status: "Assigned
                    scorePercent, passed, lessonsPercent }
 ```
 
-## AI Jana — `AssistantService` (🟡 заглушка до этапа 3)
+## AI Jana — `AssistantService` ✅
 
 | | Метод | Путь | Ответ |
 |---|---|---|---|
-| 🟡 | POST | `/api/ai/ask` | `{question, lang?}` → `AskOut` |
-| 🟡 | GET | `/api/ai/sources/{articleId}` | `KnowledgeArticle {id, title, body, updatedAt, country, sourceLabel}` (`getSource`) |
+| ✅ | POST | `/api/ai/ask` | `{question, lang?}` → `AskOut` |
+| ✅ | GET | `/api/ai/sources/{articleId}` | `KnowledgeArticle {id, title, body, updatedAt, country, sourceLabel}` (`getSource`) |
 
 ```ts
 AskOut = {
@@ -223,7 +223,14 @@ AskOut = {
 }
 ```
 
-Ответ ищется **только по базе страны пользователя** (KZ/KG). Вопросы о чужих данных получают отказ без поиска.
+Как формируется ответ:
+1. **Защита.** На вопрос о данных другого человека («зарплата начальника», «больничные Нурлана») приходит отказ без поиска: `reason: "other_person"`, `escalateAvailable: false`.
+2. **Свои данные.** На вопросы «сколько у меня отпуска» и «мой оклад» ответ берётся из 1С:ЗУП текущего пользователя. Источник — `articleId: "zup-own-data"`.
+3. **Поиск.** BM25 **только по базе страны пользователя** (KZ/KG). Если уверенность ниже порога (0.5), приходит честный отказ: `reason: "no_match"`, `escalation: "HR"`, `escalateAvailable: true`. По кнопке «Спросить HR» вызывается `POST /api/hr-questions`.
+4. **Ответ.** С `ANTHROPIC_API_KEY` модель отвечает строго по найденным фрагментам, со ссылками `[Документ, раздел]`. Без ключа или при сбое API отдаётся лучший фрагмент базы. Ответа без источника не бывает.
+
+`lang` (`ru` | `kk`) по умолчанию берётся из языка пользователя. Без LLM ответ даётся на языке базы (русском), сообщения об отказе — на `kk`.
+Вопросы записываются в журнал без идентификатора сотрудника. Отсюда HR потом увидит пробелы базы.
 
 ## Настройки и демо
 
