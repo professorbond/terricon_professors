@@ -6,3 +6,5 @@
 | # | Файл напарника | Что изменено | Зачем |
 |---|---|---|---|
 | 1 | `src/app/providers/AppProviders.tsx` | Выбор адаптера: `VITE_API_URL` задан → `createHttpServices`, иначе моки | Данные с бэкенда; без переменной его тесты на моках работают как раньше |
+| 2 | `src/features/leave/model.ts`, `src/features/leave/presentation.ts` | `'Escalated'` в `LeaveStatus`, подпись «Передано HR», следующий шаг «Решение: HR» | Статус гарантий: срок руководителя истёк, заявка передана HR (разрешено Даниилом) |
+| 3 | `src/app/routes.ts`, `src/app/router.tsx` | Каталог экранов дополняется `extPlannedScreens()`; в `DemoScreen` перед заглушкой — `extElement(screen.id)` | Маршруты ext-экранов, а также экраны Academy и AI Jana вместо заглушек `PlannedPage` |
