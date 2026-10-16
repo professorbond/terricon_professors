@@ -184,6 +184,18 @@ async def main() -> None:
         r = await c.post(f"/requests/{gid}/decide", headers=H["gulnara"], json={"decision": "Rejected", "comment": "Нет людей в смене А"})
         check(r.json().get("code") == "REASON_REQUIRED", "reject without reason -> REASON_REQUIRED", r.text)
 
+        # --- wage access
+        ws = (await c.get("/ext/wage/summary", headers=H["aigerim"])).json()
+        check(ws["limitPct"] == 50 and ws["available"] == ws["earned"] // 2, "wage: summary 50%", ws)
+        r = await c.post("/ext/wage/withdraw", headers=H["aigerim"], json={"amount": min(60000, ws["available"])})
+        check(r.status_code == 201 and r.json()["summary"]["available"] == ws["available"] - min(60000, ws["available"]), "wage: withdraw", r.text)
+        wr = (await c.get(f"/requests/{r.json()['requestId']}", headers=H["aigerim"])).json()
+        check(wr["status"] == "Approved" and wr["decidedBySystem"], "wage: approved by system")
+        r = await c.post("/ext/wage/withdraw", headers=H["aigerim"], json={"amount": 10_000_000})
+        check(r.json().get("code") == "AMOUNT_EXCEEDS_AVAILABLE", "wage: over limit rejected")
+        two = await asyncio.gather(*(c.post("/ext/wage/withdraw", headers=H["nurlan"], json={"amount": 5000}) for _ in range(3)))
+        check(sorted(x.status_code for x in two) == [201, 201, 422], "wage: concurrent withdrawals respect limit", [x.status_code for x in two])
+
         # --- ai jana
         a = (await c.post("/ai/ask", headers=H["aigerim"], json={"question": "Сколько дней отпуска положено?"})).json()
         check(a["answered"] and a["sources"][0]["articleId"] == "kb-kz-vacation", "ai: KZ answer with KZ source", a)
