@@ -1,8 +1,9 @@
 """Общий API заявок. Создание — в эндпоинте модуля типа (у каждого типа своя форма)."""
 
+from datetime import date
 from typing import Literal
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core import rbac
@@ -46,9 +47,12 @@ async def list_types(user: Employee = Depends(current_user)) -> list[RequestType
 
 @router.get("/my", response_model=Page[RequestOut], response_model_by_alias=True)
 async def my_requests(
-    type: str | None = None, user: Employee = Depends(current_user), session: AsyncSession = DbSession
+    type: str | None = None,
+    status: str | None = None,
+    user: Employee = Depends(current_user),
+    session: AsyncSession = DbSession,
 ) -> Page[RequestOut]:
-    return await _page(session, await service.list_mine(session, user, type), user)
+    return await _page(session, await service.list_mine(session, user, type, status), user)
 
 
 @router.get("/inbox", response_model=Page[RequestOut], response_model_by_alias=True)
@@ -62,16 +66,20 @@ async def inbox(
     return await _page(session, rows, user)
 
 
-@router.get("", response_model=Page[RequestOut], response_model_by_alias=True)
+@router.get("/all", response_model=Page[RequestOut], response_model_by_alias=True)
 async def registry(
     type: str | None = None,
     status: str | None = None,
     country: str | None = None,
+    unit_id: str | None = Query(default=None, alias="unitId"),
+    created_from: date | None = Query(default=None, alias="from"),
+    created_to: date | None = Query(default=None, alias="to"),
     user: Employee = Depends(rbac.require_role(rbac.HR)),
     session: AsyncSession = DbSession,
 ) -> Page[RequestOut]:
-    """Реестр всех заявок для HR."""
-    return await _page(session, await service.list_all(session, type, status, country), user)
+    """Реестр всех заявок для HR с фильтрами."""
+    rows = await service.list_all(session, type, status, country, unit_id, created_from, created_to)
+    return await _page(session, rows, user)
 
 
 @router.get("/{request_id}", response_model=RequestOut, response_model_by_alias=True)

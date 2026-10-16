@@ -14,7 +14,7 @@ async def test_before_decision_handler_can_veto_any_request_type(client, login):
 
     events.subscribe("request.before_decision", require_reason)
     he = await login("erlan")
-    rid = (await client.get("/api/leave/requests/pending", headers=he)).json()["items"][0]["id"]
+    rid = (await client.get("/api/leave/pending", headers=he)).json()["items"][0]["id"]
     r = await client.post(f"/api/requests/{rid}/decide", headers=he, json={"decision": "Rejected", "comment": "нет людей в смене"})
     assert r.status_code == 422 and r.json()["code"] == "REASON_REQUIRED"
     assert (await client.get(f"/api/requests/{rid}", headers=he)).json()["status"] == "Submitted"

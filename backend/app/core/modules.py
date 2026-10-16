@@ -7,6 +7,7 @@
         ctx.request_types.register(RequestType(...))
         ctx.events.subscribe("request.decided", on_decided)
         ctx.ticks.register("ext_wage", on_tick)
+        ctx.profile.register(contribute_profile_fields)
         ctx.i18n(RU, KK)
 
 Модуль с feature подключается, только если фича включена (EXT_FEATURES). Модели (models.py)
@@ -24,6 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings
 from app.core.events import EventBus
 from app.core.i18n import register as register_i18n
+from app.core.profile import ProfileRegistry
 from app.core.requests.registry import RequestTypeRegistry
 from app.core.ticks import TickRegistry
 
@@ -35,6 +37,7 @@ class ModuleContext:
     events: EventBus
     request_types: RequestTypeRegistry
     ticks: TickRegistry
+    profile: ProfileRegistry
 
     def include_router(self, router: APIRouter) -> None:
         self.app.include_router(router)

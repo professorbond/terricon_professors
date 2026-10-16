@@ -1,5 +1,6 @@
 """Операции движка заявок. Все проверки прав — здесь, на сервере."""
 
+from datetime import UTC, date, datetime, time, timedelta
 from typing import Any
 
 from sqlalchemy import select
@@ -93,7 +94,10 @@ async def _lock(session: AsyncSession, request_id: str) -> Request:
 
 async def lock_employee(session: AsyncSession, employee_id: str) -> None:
     """Сериализовать подачу заявок одного сотрудника (проверка пересечений, двойной клик)."""
-    await session.execute(select(Employee.id).where(Employee.id == employee_id).with_for_update())
+    # key_share=True → FOR NO KEY UPDATE: не конфликтует с проверками внешних ключей (approver_id → employees),
+    # иначе параллельные заявки руководителя и его подчинённых дают deadlock
+    q = select(Employee.id).where(Employee.id == employee_id).with_for_update(key_share=True)
+    await session.execute(q)
 
 
 def _add_event(
@@ -203,6 +207,8 @@ async def _apply_decision(
     comment = (comment or "").strip() or None
     if decision == REJECTED and not comment:
         raise validation("COMMENT_REQUIRED", "Укажите причину отказа", "comment")
+    if decision == APPROVED and not comment and request_types.get(req.type).comment_required_on_approve:
+        raise validation("COMMENT_REQUIRED", "Напишите ответ", "comment")
 
     # Модули (гарантии и др.) могут запретить решение, бросив AppError
     await events.emit(
@@ -288,10 +294,14 @@ async def cancel(session: AsyncSession, actor: Employee, request_id: str) -> Req
 # ---------- списки ----------
 
 
-async def list_mine(session: AsyncSession, user: Employee, type_code: str | None = None) -> list[Request]:
+async def list_mine(
+    session: AsyncSession, user: Employee, type_code: str | None = None, status: str | None = None
+) -> list[Request]:
     q = select(Request).where(Request.employee_id == user.id)
     if type_code:
         q = q.where(Request.type == type_code)
+    if status:
+        q = q.where(Request.status == status)
     return list(await session.scalars(q.order_by(Request.created_at.desc())))
 
 
@@ -316,16 +326,32 @@ async def list_inbox(
 
 
 async def list_all(
-    session: AsyncSession, type_code: str | None = None, status: str | None = None, country: str | None = None
+    session: AsyncSession,
+    type_code: str | None = None,
+    status: str | None = None,
+    country: str | None = None,
+    unit_id: str | None = None,
+    created_from: date | None = None,
+    created_to: date | None = None,
 ) -> list[Request]:
-    """Реестр HR (вызывать только после проверки роли)."""
+    """Реестр HR (вызывать только после проверки роли). Период — по дате создания, включительно."""
     q = select(Request)
     if type_code:
         q = q.where(Request.type == type_code)
     if status:
         q = q.where(Request.status == status)
-    if country:
-        q = q.join(Employee, Employee.id == Request.employee_id).where(Employee.country == country)
+    if country or unit_id:
+        q = q.join(Employee, Employee.id == Request.employee_id)
+        if country:
+            q = q.where(Employee.country == country)
+        if unit_id:
+            q = q.where(Employee.unit_id == unit_id)
+    # Границы периода — календарные дни по времени компании (Алматы), не по UTC
+    if created_from:
+        q = q.where(Request.created_at >= datetime.combine(created_from, time.min, clock.DEFAULT_TZ).astimezone(UTC))
+    if created_to:
+        end = datetime.combine(created_to + timedelta(days=1), time.min, clock.DEFAULT_TZ)
+        q = q.where(Request.created_at < end.astimezone(UTC))
     return list(await session.scalars(q.order_by(Request.created_at.desc())))
 
 

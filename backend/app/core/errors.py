@@ -8,7 +8,7 @@ from typing import Any, Literal
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import DBAPIError, IntegrityError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 ProblemKind = Literal["unauthenticated", "forbidden", "not-found", "validation", "conflict", "unavailable"]
@@ -40,7 +40,12 @@ class AppError(Exception):
         self.data = data
 
     def to_body(self) -> dict[str, Any]:
-        body: dict[str, Any] = {"kind": self.kind, "code": self.code, "message": self.message}
+        body: dict[str, Any] = {
+            "kind": self.kind,
+            "code": self.code,
+            "message": self.message,
+            "messageKey": f"errors.{self.code}",  # для перевода на фронтенде (ru/kk)
+        }
         if self.field_errors:
             body["fieldErrors"] = self.field_errors
         if self.data:
@@ -84,8 +89,16 @@ def install_error_handlers(app: FastAPI) -> None:
         body = AppError("conflict", "CONFLICT", "Данные изменились параллельно, повторите действие").to_body()
         return JSONResponse(body, status_code=409)
 
+    @app.exception_handler(DBAPIError)
+    async def _db_error(_: Request, exc: DBAPIError) -> JSONResponse:
+        if "deadlock" in str(exc.orig).lower() or "could not serialize" in str(exc.orig).lower():
+            body = AppError("conflict", "CONFLICT", "Параллельное изменение, повторите действие").to_body()
+            return JSONResponse(body, status_code=409)
+        raise exc
+
     @app.exception_handler(StarletteHTTPException)
     async def _http(_: Request, exc: StarletteHTTPException) -> JSONResponse:
         kind = {401: "unauthenticated", 403: "forbidden", 404: "not-found", 409: "conflict"}.get(exc.status_code, "validation")
-        body = {"kind": kind, "code": f"HTTP_{exc.status_code}", "message": str(exc.detail)}
+        code = f"HTTP_{exc.status_code}"
+        body = {"kind": kind, "code": code, "message": str(exc.detail), "messageKey": f"errors.{code}"}
         return JSONResponse(body, status_code=exc.status_code)

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -28,6 +28,10 @@ class NotificationOut(ApiModel):
     read_at: datetime | None
     target: dict[str, Any] | None
     link: str | None
+    # Ключи i18n и параметры — фронтенд может перевести сам (title/message уже переведены)
+    title_key: str
+    body_key: str
+    params: dict[str, Any]
 
 
 class UnreadCount(ApiModel):
@@ -45,12 +49,15 @@ def present(n: Notification, lang: str) -> NotificationOut:
         read_at=n.read_at,
         target=n.target,
         link=n.link,
+        title_key=n.title_key,
+        body_key=n.body_key,
+        params=n.params,
     )
 
 
 @router.get("", response_model=Page[NotificationOut], response_model_by_alias=True)
 async def list_mine(
-    unread_only: bool = False,
+    unread_only: bool = Query(default=False, alias="unreadOnly"),
     user: Employee = Depends(current_user),
     session: AsyncSession = DbSession,
 ) -> Page[NotificationOut]:

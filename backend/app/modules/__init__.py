@@ -5,7 +5,9 @@ ext_* (каждый ext-модуль выключается флагом EXT_FEA
 """
 
 MODULES: list[str] = [
+    "profile",
     "leave",
+    "hr_question",
     "academy",
     "ai_jana",
 ]

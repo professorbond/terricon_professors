@@ -1,7 +1,6 @@
-# Бэкенд JanaМен: API и точки расширения
+# Бэкенд JanaМен: точки расширения
 
-Для напарника. Здесь описано, как подключить фронтенд к API (HTTP-адаптер вместо `mocks/`)
-и как добавить свой модуль на бэкенде.
+Как устроен бэкенд и как добавить в него модуль. API для фронтенда описан в [`API_CONTRACT.md`](API_CONTRACT.md).
 
 ## Запуск
 
@@ -29,63 +28,7 @@ Swagger со всеми схемами: http://localhost:8000/docs.
 
 ## Подключение фронтенда
 
-- Базовый URL: `import.meta.env.VITE_API_URL` (в compose это `http://localhost:8000`). CORS для `:5173` и `:4173` открыт.
-- Вход: `POST /api/auth/login {login, password}` → `{accessToken, user}`. Дальше заголовок `Authorization: Bearer <token>`.
-  Демо-вход без пароля (аналог выбора роли на `/login`): `POST /api/demo/login-as {login}`, список персонажей: `GET /api/demo/personas`.
-- JSON в camelCase. Списки отдаются как `Page<T>`: `{items, nextCursor: null}`.
-- Ошибка всегда имеет форму `ServiceProblem` с кодом и HTTP-статусом:
-  ```json
-  {"kind": "validation", "code": "COMMENT_REQUIRED", "message": "Укажите причину отказа", "fieldErrors": {"comment": ["..."]}, "data": {}}
-  ```
-  `kind`: `unauthenticated` 401, `forbidden` 403, `not-found` 404, `validation` 422, `conflict` 409.
-
-### Соответствие контрактам `src/services/contracts.ts`
-
-| Контракт фронта | Эндпоинт | Ответ |
-|---|---|---|
-| `IAuthService.getCurrentUser` | `GET /api/auth/me` | `User` + `country`, `lang` |
-| `IAuthService.signInDemo(role)` | `POST /api/demo/login-as {login}` | `{accessToken, user}` |
-| `IProfileService.getMyProfile` | `GET /api/profile/me` | `EmployeeProfile` + `role`, `country`, `gradeCode`, `monthlyBase` |
-| `ILeaveRequestService.listMine` | `GET /api/leave/requests/my` | `Page<LeaveRequest>` |
-| `ILeaveRequestService.getById` | `GET /api/leave/requests/{id}` | `LeaveRequest` |
-| `ILeaveRequestService.submit` | `POST /api/leave/requests {submissionKey, startDate, endDate, comment}` | `LeaveRequest` (201) |
-| `ILeaveRequestService.listPendingApprovals` | `GET /api/leave/requests/pending` | `Page<LeaveRequest>` |
-| `ILeaveRequestService.listTeam` | `GET /api/leave/requests/team` | `Page<LeaveRequest>`, все статусы |
-| `ILeaveRequestService.decide` | `POST /api/leave/requests/{id}/decision {decision, expectedVersion, comment, reasonCode?}` | `LeaveRequest`; повторное решение или устаревшая версия → 409 `ALREADY_DECIDED` / `STALE_VERSION` |
-| `INotificationService.listMine` | `GET /api/notifications[?unreadOnly=true]` | `Page<Notification>` |
-| `INotificationService.markRead` | `POST /api/notifications/{id}/read` | `Notification` |
-| счётчик колокольчика | `GET /api/notifications/unread-count` | `{unread}` |
-
-`LeaveRequest` совпадает с моделью фронта, плюс несколько полей:
-- `decisionComment`, `decisionReasonCode`, `decidedBySystem`;
-- `permissions: {canDecide, canCancel}`: показывать кнопки по ним, а не по роли;
-- `event` в каждом элементе `history`: `created | approved | rejected | escalated | cancelled | document_registered`.
-
-**Новый статус `Escalated`** означает, что срок ответа руководителя истёк и заявку передали HR
-(это будет делать модуль гарантий). Его нужно добавить в `LeaveStatus` и в бейдж.
-
-Остаток отпуска: `GET /api/leave/balance` → `{days, asOf, pendingDays}`. Он берётся из mock 1С:ЗУП.
-Одобренный отпуск уходит приказом в Documentolog, после чего остаток в «1С» уменьшается.
-
-### Другие эндпоинты каркаса
-
-| Что | Эндпоинт | Роли |
-|---|---|---|
-| Все заявки пользователя (любые типы) | `GET /api/requests/my[?type=]` | все |
-| Карточка любой заявки | `GET /api/requests/{id}` | владелец, руководитель команды, HR |
-| Очередь согласования (любые типы) | `GET /api/requests/inbox[?status=open\|all&type=]` | Manager, HRAdmin |
-| Решение / отзыв | `POST /api/requests/{id}/decide`, `POST /api/requests/{id}/cancel` | согласующий / автор |
-| Реестр HR | `GET /api/requests[?type=&status=&country=]` | HRAdmin |
-| Типы заявок | `GET /api/requests/types` | все |
-| Профиль сотрудника | `GET /api/employees/{id}` | сам, его руководитель (без зарплаты), HR |
-| Моя команда | `GET /api/team` | Manager |
-| Все сотрудники | `GET /api/employees[?country=]` | HRAdmin |
-| Флаги, страна, язык | `GET /api/settings` → `{features, demoMode, country, lang, llmAvailable}` | все |
-| Язык ru/kk | `PUT /api/auth/me/lang {lang}` | все |
-| Демо | `POST /api/demo/advance-time {hours}`, `POST /api/demo/reset`, `GET /api/demo/state` | только при `DEMO_MODE` |
-
-«Мои заявки» лучше строить на `GET /api/requests/my`. Тогда туда автоматически попадут
-и «Зарплата по факту», и обращения Даниила. У каждой заявки есть `type` и `typeTitle`.
+Все эндпоинты, форматы и расхождения с контрактами фронтенда описаны в [`API_CONTRACT.md`](API_CONTRACT.md).
 
 ## Как добавить модуль на бэкенде
 
@@ -105,11 +48,12 @@ modules/leave/
 
 ```python
 def register(ctx: ModuleContext) -> None:
-    ctx.i18n({"request.type.leave": "Отпуск"}, {"request.type.leave": "Демалыс"})
-    ctx.request_types.register(RequestType(code="leave", number_prefix="JL",
-                                           title_key="request.type.leave", approver="manager"))
+    ctx.i18n({"request.type.vacation": "Отпуск"}, {"request.type.vacation": "Демалыс"})
+    ctx.request_types.register(RequestType(code="vacation", number_prefix="JL",
+                                           title_key="request.type.vacation", approver="manager"))
     ctx.events.subscribe("request.decided", send_order_to_1c)
     ctx.ticks.register("my_module", on_tick)       # раз в минуту и после demo/advance-time
+    ctx.profile.register(contribute_profile)       # свои поля в GET /api/profile/me
     ctx.include_router(router)
 ```
 
@@ -122,7 +66,7 @@ def register(ctx: ModuleContext) -> None:
 
 ```python
 from app.core.requests import service as requests
-req = await requests.create(session, user, "leave", payload_dict, submission_key)
+req = await requests.create(session, user, "vacation", payload_dict, submission_key)
 ```
 
 Статусы, история, согласующий (`manager` — руководитель сотрудника, `hr`, `none`), права,
@@ -151,6 +95,15 @@ await notify(session, employee_id, "course.assigned", "notif.course.title", "not
 ```
 
 Тексты задаются ключами i18n (`ctx.i18n(ru, kk)`) и рендерятся на языке получателя.
+
+### Поля профиля
+
+Модуль добавляет поля в профиль, не трогая модуль `profile`:
+
+```python
+async def contribute_profile(session, viewer, employee) -> dict:
+    return {"leave_balance": LeaveBalance(...)}   # схемы общих полей — app/core/profile.py
+```
 
 ### Права
 
