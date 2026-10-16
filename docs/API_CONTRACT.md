@@ -293,6 +293,33 @@ AskOut = {
 - **AI Jana.** На вопрос «сколько я могу снять по факту?» отвечает этой суммой с источником «Данные 1С:ЗУП».
 - Ставки удержаний в расчётке демонстрационные, это прописано в `note`.
 
+### HR-пульт: радар удержания и счётчик — флаг `hr_console` ✅ (только HRAdmin)
+
+| | Метод | Путь | Ответ |
+|---|---|---|---|
+| ✅ | GET | `/api/ext/hr/risks?country=` | `Page<RiskCard>`: `{employeeId, employeeName, position, department, country, managerName, openSignals, nextReviewDate, signals[{id, kind, title, details, detectedAt, status, action, actionedAt, retainedConfirmed}]}` |
+| ✅ | POST | `/api/ext/hr/risks/{signalId}/propose-review` | `RiskCard`. Пересмотр через 14 дней, сотрудник получает уведомление `salary.review`, сигнал получает статус `actioned` |
+| ✅ | POST | `/api/ext/hr/risks/{signalId}/confirm-retained` | `Signal` («Сотрудник остался») — учитывается в счётчике |
+| ✅ | POST | `/api/ext/hr/risks/recalculate` | Пересчитать сейчас (то же делает тик раз в минуту) |
+| ✅ | GET | `/api/ext/hr/savings?country=` | `{retainedCount, perPerson, saved, currency, formula}` — «Радар сохранил 12 сотрудников = 10,8 млн ₸» |
+
+Сотрудник и руководитель получают 403.
+
+Сигналы (`kind`), `title` уже написан человеческим языком на `ru`/`kk`:
+
+| `kind` | Условие |
+|---|---|
+| `no_review` | Давно нет пересмотра зарплаты |
+| `rejections` | 2 и больше отказов за полгода |
+| `pay_equity` | Новичку предложили больше, чем получает сотрудник |
+| `slow_answers` | 2 и больше заявок решены позже срока |
+| `open_grievance` | Вопрос к HR или обращение без ответа дольше срока |
+
+Радар **не читает** выводы «Зарплаты по факту», вопросы к AI и поведенческие данные, это проверяется тестом.
+Seed:
+- в зоне риска Айгерим (`no_review`, `pay_equity`), Нурлан (`rejections`, `slow_answers`, `open_grievance`, `pay_equity`) и Асель (`pay_equity`);
+- 11 человек уже «сохранены», поэтому счётчик стартует с 9 900 000 ₸ и после демо становится 10 800 000 ₸.
+
 ## Настройки и демо
 
 | ✅ | Метод | Путь | Ответ |

@@ -196,6 +196,18 @@ async def main() -> None:
         two = await asyncio.gather(*(c.post("/ext/wage/withdraw", headers=H["nurlan"], json={"amount": 5000}) for _ in range(3)))
         check(sorted(x.status_code for x in two) == [201, 201, 422], "wage: concurrent withdrawals respect limit", [x.status_code for x in two])
 
+        # --- hr console
+        cards = {x["employeeId"]: x for x in (await c.get("/ext/hr/risks?country=KZ", headers=H["daniyar"])).json()["items"]}
+        check({"emp-aigerim", "emp-nurlan", "emp-asel"} <= set(cards), "radar: 3+ people at risk", list(cards))
+        check((await c.get("/ext/hr/risks", headers=H["erlan"])).status_code == 403, "radar: manager 403")
+        sv = (await c.get("/ext/hr/savings", headers=H["daniyar"])).json()
+        sig = next(x for x in cards["emp-aigerim"]["signals"] if x["kind"] == "no_review")
+        r = await c.post(f"/ext/hr/risks/{sig['id']}/propose-review", headers=H["daniyar"])
+        check(r.status_code == 200 and r.json()["nextReviewDate"], "radar: propose review")
+        await c.post(f"/ext/hr/risks/{sig['id']}/confirm-retained", headers=H["daniyar"])
+        sv2 = (await c.get("/ext/hr/savings", headers=H["daniyar"])).json()
+        check(sv2["saved"] - sv["saved"] == 900000, "radar: savings +900 000", (sv["saved"], sv2["saved"]))
+
         # --- ai jana
         a = (await c.post("/ai/ask", headers=H["aigerim"], json={"question": "Сколько дней отпуска положено?"})).json()
         check(a["answered"] and a["sources"][0]["articleId"] == "kb-kz-vacation", "ai: KZ answer with KZ source", a)
