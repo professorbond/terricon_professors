@@ -20,6 +20,10 @@ class RequestType:
     visible_to_manager: bool = True
     # Скрыть автора от этого зрителя (анонимные обращения). Автор себя видит всегда.
     hide_author: Callable[[Request, Employee], bool] = field(default=lambda _req, _viewer: False)
+    # Свои тексты уведомления автору по статусу: {"Approved": (title_key, body_key)}
+    decided_keys: dict[str, tuple[str, str]] = field(default_factory=dict)
+    # Комментарий обязателен и при одобрении (ответ HR на вопрос)
+    comment_required_on_approve: bool = False
 
 
 class RequestTypeRegistry:

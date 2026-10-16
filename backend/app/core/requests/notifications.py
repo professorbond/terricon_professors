@@ -45,13 +45,15 @@ def _target(req: Request) -> dict[str, str]:
     return {"kind": "request", "requestId": req.id}
 
 
-async def _notify_hr(session: AsyncSession, req: Request, title_key: str, body_key: str, **extra: str | None) -> None:
+async def _notify_hr(
+    session: AsyncSession, req: Request, kind: str, title_key: str, body_key: str, **extra: str | None
+) -> None:
     owner = await session.get(Employee, req.employee_id)
     # HR страны сотрудника; если в стране HR нет — всем HR
     hrs = await list_hr(session, owner.country if owner else None) or await list_hr(session)
     for hr in hrs:
         if hr.id != req.employee_id:
-            await notify(session, hr.id, "request.inbox", title_key, body_key, _params(req, **extra), _target(req))
+            await notify(session, hr.id, kind, title_key, body_key, _params(req, **extra), _target(req))
 
 
 async def on_created(session: AsyncSession, request: Request, employee: Employee) -> None:
@@ -59,18 +61,21 @@ async def on_created(session: AsyncSession, request: Request, employee: Employee
         await notify(
             session,
             request.approver_id,
-            "request.inbox",
+            "request.created",
             "notif.request.new.title",
             "notif.request.new.body",
             _params(request),
             _target(request),
         )
     elif request.approver_kind == "hr":
-        await _notify_hr(session, request, "notif.request.new.title", "notif.request.new.body")
+        await _notify_hr(session, request, "request.created", "notif.request.new.title", "notif.request.new.body")
 
 
 async def on_decided(session: AsyncSession, request: Request, actor: Employee | None, by_system: bool) -> None:
-    if request.status == "Approved":
+    rtype = request_types.get(request.type)
+    if request.status in rtype.decided_keys:  # тип задал свои тексты (например, «HR ответил»)
+        title, body = rtype.decided_keys[request.status]
+    elif request.status == "Approved":
         body = "notif.request.approved_system.body" if by_system else "notif.request.approved.body"
         title = "notif.request.approved.title"
     else:
@@ -98,7 +103,12 @@ async def on_escalated(session: AsyncSession, request: Request) -> None:
         _target(request),
     )
     await _notify_hr(
-        session, request, "notif.request.escalated.title", "notif.request.escalated.body", comment=comment
+        session,
+        request,
+        "request.escalated",
+        "notif.request.escalated.title",
+        "notif.request.escalated.body",
+        comment=comment,
     )
 
 

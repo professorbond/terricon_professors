@@ -3,7 +3,7 @@ from typing import Literal
 
 from pydantic import Field
 
-from app.core.requests.schemas import RequestPermissions
+from app.core.requests.schemas import DocumentRef, RequestPermissions
 from app.core.schemas import ApiModel
 
 
@@ -30,7 +30,7 @@ class LeaveEventOut(ApiModel):
     status: str
     occurred_at: datetime
     actor_label: str
-    actor_id: str | None
+    actor_id: str  # "system" для системных событий (у фронтенда тип string)
     comment: str | None
     event: str
 
@@ -41,11 +41,11 @@ class LeaveRequestOut(ApiModel):
     id: str
     number: str
     type: Literal["Leave"] = "Leave"
-    submission_key: str | None
+    submission_key: str
     employee_id: str
     employee_name: str
-    manager_id: str | None
-    manager_name: str | None
+    manager_id: str
+    manager_name: str
     start_date: date
     end_date: date
     requested_days: int
@@ -57,6 +57,7 @@ class LeaveRequestOut(ApiModel):
     decision_comment: str | None
     decision_reason_code: str | None
     decided_by_system: bool
+    documents: list[DocumentRef]
     permissions: RequestPermissions
 
 
@@ -64,3 +65,4 @@ class LeaveBalanceOut(ApiModel):
     days: int
     as_of: date
     pending_days: int
+    available_days: int

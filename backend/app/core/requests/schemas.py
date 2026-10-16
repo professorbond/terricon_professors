@@ -26,6 +26,12 @@ class RequestEventOut(ApiModel):
     data: dict[str, Any]
 
 
+class DocumentRef(ApiModel):
+    id: str
+    kind: str
+    number: str
+
+
 class RequestPermissions(ApiModel):
     can_decide: bool
     can_cancel: bool
@@ -51,6 +57,7 @@ class RequestOut(ApiModel):
     decision_comment: str | None
     version: int
     history: list[RequestEventOut]
+    documents: list[DocumentRef]
     permissions: RequestPermissions
 
 
@@ -108,6 +115,11 @@ async def present(session: AsyncSession, req: Request, viewer: Employee) -> Requ
                 data=e.data,
             )
             for e in req.events
+        ],
+        documents=[
+            DocumentRef(id=e.data["documentId"], kind=e.data.get("documentKind", ""), number=e.data.get("documentNumber", ""))
+            for e in req.events
+            if "documentId" in e.data
         ],
         permissions=RequestPermissions(
             can_decide=service.can_decide(viewer, req), can_cancel=service.can_cancel(viewer, req)

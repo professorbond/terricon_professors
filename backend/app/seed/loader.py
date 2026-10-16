@@ -103,6 +103,7 @@ async def seed_zup(session: AsyncSession) -> None:
                 vacation_days_left=row["vacation_days_left"],
                 vacation_as_of=date(today.year, 1, 1),
                 incidents_last_date=months_ago(row["incident_months_ago"]),
+                planned_shifts_per_month=row.get("planned_shifts", 22),
             )
         )
     month_start = today.replace(day=1)

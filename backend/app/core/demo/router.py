@@ -1,6 +1,7 @@
 """Демо-инструменты: перевод времени, сброс, быстрый вход за персонажей. Только DEMO_MODE=true."""
 
 from datetime import datetime, timedelta
+from typing import Literal
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import Field
@@ -12,7 +13,7 @@ from app.core.auth import issue_token
 from app.core.auth_router import LoginOut, user_out
 from app.core.db import DbSession
 from app.core.demo.service import save_offset, wipe_all
-from app.core.errors import not_found
+from app.core.errors import not_found, validation
 from app.core.org.models import Employee
 from app.core.org.service import find_by_login
 from app.core.schemas import ApiModel
@@ -39,7 +40,13 @@ class Persona(ApiModel):
 
 
 class LoginAsIn(ApiModel):
-    login: str
+    """login — конкретный персонаж; role — персонаж по умолчанию для роли (signInDemo фронтенда)."""
+
+    login: str | None = None
+    role: Literal["Employee", "Manager", "HRAdmin"] | None = None
+
+
+DEFAULT_PERSONA = {"Employee": "aigerim", "Manager": "erlan", "HRAdmin": "daniyar"}
 
 
 def _state() -> DemoStateOut:
@@ -81,7 +88,10 @@ async def personas(session: AsyncSession = DbSession) -> list[Persona]:
 @router.post("/login-as", response_model=LoginOut, response_model_by_alias=True)
 async def login_as(body: LoginAsIn, session: AsyncSession = DbSession) -> LoginOut:
     """Вход без пароля за тестового персонажа (демо-панель). В проде роутер не подключается."""
-    emp = await find_by_login(session, body.login)
+    login = body.login or (DEFAULT_PERSONA[body.role] if body.role else None)
+    if login is None:
+        raise validation("LOGIN_OR_ROLE_REQUIRED", "Укажите login или role", "login")
+    emp = await find_by_login(session, login)
     if emp is None:
         raise not_found("Персонаж не найден")
     return LoginOut(access_token=issue_token(emp), user=user_out(emp))

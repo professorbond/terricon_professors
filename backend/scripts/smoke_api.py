@@ -37,7 +37,7 @@ async def main() -> None:
         r = await c.get("/auth/me", headers={"Authorization": "Bearer garbage"})
         check(r.status_code == 401, "garbage token 401")
         forged = pyjwt.encode({"sub": "emp-daniyar", "role": "HRAdmin"}, "x" * 40, algorithm="HS256")
-        r = await c.get("/requests", headers={"Authorization": f"Bearer {forged}"})
+        r = await c.get("/requests/all", headers={"Authorization": f"Bearer {forged}"})
         check(r.status_code == 401, "forged token (other secret) 401")
         r = await c.post("/auth/login", json={"login": "aigerim"})
         check(r.status_code == 422 and r.json()["kind"] == "validation" and "password" in r.json()["fieldErrors"], "missing field -> 422 fieldErrors", r.text)
@@ -68,16 +68,16 @@ async def main() -> None:
         check((await c.get("/employees", headers=H["erlan"])).status_code == 403, "manager /employees 403")
 
         # --- leave: approve flow (KZ)
-        pend = (await c.get("/leave/requests/pending", headers=H["erlan"])).json()["items"]
-        check(len(pend) == 1 and pend[0]["employeeId"] == "emp-aigerim", "erlan pending = aigerim leave")
+        pend = (await c.get("/leave/pending", headers=H["erlan"])).json()["items"]
+        check(len(pend) == 1 and pend[0]["employeeId"] == "emp-aigerim", "erlan pending = aigerim leave", pend)
         rid = pend[0]["id"]
-        check((await c.get(f"/leave/requests/{rid}", headers=H["nurlan"])).status_code == 403, "colleague cannot read leave by id")
-        check((await c.get("/leave/requests/pending", headers=H["aigerim"])).status_code == 403, "employee pending 403")
+        check((await c.get(f"/leave/{rid}", headers=H["nurlan"])).status_code == 403, "colleague cannot read leave by id")
+        check((await c.get("/leave/pending", headers=H["aigerim"])).status_code == 403, "employee pending 403")
         bal0 = (await c.get("/leave/balance", headers=H["aigerim"])).json()
-        check(bal0["days"] == 24 and bal0["pendingDays"] == 7, "balance before", bal0)
-        r = await c.post(f"/leave/requests/{rid}/decision", headers=H["erlan"], json={"decision": "Approved", "expectedVersion": 1})
+        check(bal0["days"] == 21 and bal0["pendingDays"] == 7 and bal0["availableDays"] == 14, "balance before", bal0)
+        r = await c.post(f"/leave/{rid}/decision", headers=H["erlan"], json={"decision": "Approved", "expectedVersion": 1})
         check(r.status_code == 200 and r.json()["status"] == "Approved", "erlan approves", r.text)
-        check((await c.get("/leave/balance", headers=H["aigerim"])).json()["days"] == 17, "balance 24 -> 17 via 1C order")
+        check((await c.get("/leave/balance", headers=H["aigerim"])).json()["days"] == 14, "balance 21 -> 14 after approval")
         n = (await c.get("/notifications?unreadOnly=true", headers=H["aigerim"])).json()["items"]
         check(any(x["target"].get("requestId") == rid for x in n), "aigerim notified")
         my = (await c.get("/requests/my", headers=H["aigerim"])).json()["items"]
@@ -85,36 +85,36 @@ async def main() -> None:
 
         # --- leave: reject flow (KG)
         start = today + timedelta(days=30)
-        r = await c.post("/leave/requests", headers=H["bakyt"], json={"submissionKey": "e2e-b1", "startDate": str(start), "endDate": str(start + timedelta(days=4)), "comment": "Той"})
+        r = await c.post("/leave", headers=H["bakyt"], json={"submissionKey": "e2e-b1", "startDate": str(start), "endDate": str(start + timedelta(days=4)), "comment": "Той"})
         check(r.status_code == 201 and r.json()["managerId"] == "emp-aibek", "bakyt submits -> aibek", r.text)
         bid = r.json()["id"]
         check(any(x["target"].get("requestId") == bid for x in (await c.get("/notifications", headers=H["aibek"])).json()["items"]), "aibek notified of new request")
         check((await c.get(f"/requests/{bid}", headers=H["erlan"])).status_code == 403, "KZ manager cannot see KG request")
-        r = await c.post(f"/leave/requests/{bid}/decision", headers=H["aibek"], json={"decision": "Rejected", "expectedVersion": 1})
+        r = await c.post(f"/leave/{bid}/decision", headers=H["aibek"], json={"decision": "Rejected", "expectedVersion": 1})
         check(r.status_code == 422 and r.json()["code"] == "COMMENT_REQUIRED", "reject w/o comment 422")
-        r = await c.post(f"/leave/requests/{bid}/decision", headers=H["aibek"], json={"decision": "Rejected", "expectedVersion": 1, "comment": "Инвентаризация склада"})
+        r = await c.post(f"/leave/{bid}/decision", headers=H["aibek"], json={"decision": "Rejected", "expectedVersion": 1, "comment": "Инвентаризация склада"})
         check(r.status_code == 200 and r.json()["decisionComment"] == "Инвентаризация склада", "aibek rejects with reason")
         n = (await c.get("/notifications?unreadOnly=true", headers=H["bakyt"])).json()["items"]
         check(any("Инвентаризация склада" in x["message"] for x in n), "bakyt sees reason in notification", n)
         check((await c.get("/leave/balance", headers=H["bakyt"])).json()["days"] == 18, "rejected leave keeps balance")
 
         # --- cancel
-        r = await c.post("/leave/requests", headers=H["asel"], json={"submissionKey": "e2e-a1", "startDate": str(start), "endDate": str(start + timedelta(days=1))})
+        r = await c.post("/leave", headers=H["asel"], json={"submissionKey": "e2e-a1", "startDate": str(start), "endDate": str(start + timedelta(days=1))})
         aid = r.json()["id"]
         check((await c.post(f"/requests/{aid}/cancel", headers=H["gulnara"])).status_code == 403, "manager cannot cancel employee request")
         r = await c.post(f"/requests/{aid}/cancel", headers=H["asel"])
         check(r.status_code == 200 and r.json()["status"] == "Cancelled", "asel cancels")
         check((await c.post(f"/requests/{aid}/cancel", headers=H["asel"])).status_code == 409, "cancel twice 409")
-        check(all(x["id"] != aid for x in (await c.get("/leave/requests/pending", headers=H["gulnara"])).json()["items"]), "cancelled not in pending")
-        r = await c.post("/leave/requests", headers=H["asel"], json={"submissionKey": "e2e-a2", "startDate": str(start), "endDate": str(start + timedelta(days=1))})
+        check(all(x["id"] != aid for x in (await c.get("/leave/pending", headers=H["gulnara"])).json()["items"]), "cancelled not in pending")
+        r = await c.post("/leave", headers=H["asel"], json={"submissionKey": "e2e-a2", "startDate": str(start), "endDate": str(start + timedelta(days=1))})
         check(r.status_code == 201, "after cancel same dates can be resubmitted", r.text)
 
         # --- race: two decisions at once
-        r = await c.post("/leave/requests", headers=H["nurlan"], json={"submissionKey": "e2e-race", "startDate": str(start), "endDate": str(start + timedelta(days=2))})
+        r = await c.post("/leave", headers=H["nurlan"], json={"submissionKey": "e2e-race", "startDate": str(start), "endDate": str(start + timedelta(days=2))})
         nid = r.json()["id"]
         a, b = await asyncio.gather(
-            c.post(f"/leave/requests/{nid}/decision", headers=H["erlan"], json={"decision": "Approved", "expectedVersion": 1}),
-            c.post(f"/leave/requests/{nid}/decision", headers=H["erlan"], json={"decision": "Rejected", "expectedVersion": 1, "comment": "гонка"}),
+            c.post(f"/leave/{nid}/decision", headers=H["erlan"], json={"decision": "Approved", "expectedVersion": 1}),
+            c.post(f"/leave/{nid}/decision", headers=H["erlan"], json={"decision": "Rejected", "expectedVersion": 1, "comment": "гонка"}),
         )
         codes = sorted([a.status_code, b.status_code])
         final = (await c.get(f"/requests/{nid}", headers=H["erlan"])).json()
@@ -124,24 +124,40 @@ async def main() -> None:
         # --- race: double submit same key
         s2 = today + timedelta(days=60)
         body = {"submissionKey": "e2e-dbl", "startDate": str(s2), "endDate": str(s2)}
-        a, b = await asyncio.gather(*(c.post("/leave/requests", headers=H["aigerim"], json=body) for _ in range(2)))
+        a, b = await asyncio.gather(*(c.post("/leave", headers=H["aigerim"], json=body) for _ in range(2)))
         ids = {x.json().get("id") for x in (a, b) if x.status_code == 201}
         check({a.status_code, b.status_code} <= {201, 409} and len(ids) <= 1 and 201 in (a.status_code, b.status_code), "race: double submit -> one request", (a.status_code, b.status_code, a.text[:120], b.text[:120]))
 
         # --- race: numbering under concurrent creates
         s3 = today + timedelta(days=90)
         rs = await asyncio.gather(*(
-            c.post("/leave/requests", headers=H[l], json={"submissionKey": "e2e-num", "startDate": str(s3), "endDate": str(s3)})
+            c.post("/leave", headers=H[l], json={"submissionKey": "e2e-num", "startDate": str(s3), "endDate": str(s3)})
             for l in ("nurlan", "asel", "bakyt", "erlan")
         ))
         check(all(x.status_code == 201 for x in rs), "race: concurrent creates by different people", [(x.status_code, x.text[:100]) for x in rs])
 
         # --- HR
-        reg = (await c.get("/requests", headers=H["daniyar"])).json()["items"]
-        check(len(reg) >= 6, "HR registry", len(reg))
-        kg = (await c.get("/requests?country=KG", headers=H["daniyar"])).json()["items"]
-        check(kg and all(x["employeeId"] == "emp-bakyt" for x in kg), "HR registry filter KG")
-        check((await c.get("/requests/types", headers=H["aigerim"])).json()[0]["code"] == "leave", "request types")
+        reg = (await c.get("/requests/all", headers=H["daniyar"])).json()["items"]
+        check(len(reg) >= 8, "HR registry", len(reg))
+        kg = (await c.get("/requests/all?country=KG", headers=H["daniyar"])).json()["items"]
+        check(len(kg) >= 2 and all(x["employeeId"] == "emp-bakyt" for x in kg), "HR registry filter KG")
+        check((await c.get("/requests/types", headers=H["aigerim"])).json()[0]["code"] == "vacation", "request types")
+
+        # --- card documents, role login, hr question
+        card = (await c.get(f"/leave/{rid}", headers=H["aigerim"])).json()
+        check(card["documents"] and card["documents"][0]["kind"] == "leave_order", "card shows leave order document")
+        r = await c.post("/demo/login-as", json={"role": "Manager"})
+        check(r.json()["user"]["id"] == "emp-erlan", "demo login by role")
+        r = await c.post("/hr-questions", headers=H["asel"], json={"question": "Сколько дней отпуска за вредность?"})
+        check(r.status_code == 201, "hr question created", r.text)
+        hq = r.json()["id"]
+        check((await c.get(f"/requests/{hq}", headers=H["gulnara"])).status_code == 403, "manager cannot see hr question")
+        r = await c.post(f"/requests/{hq}/decide", headers=H["daniyar"], json={"decision": "Approved", "comment": "Для сортировщиков не предусмотрено."})
+        check(r.status_code == 200, "HR answers question")
+        n = (await c.get("/notifications?unreadOnly=true", headers=H["asel"])).json()["items"]
+        check(any("не предусмотрено" in x["message"] for x in n), "author gets HR answer")
+        r = await c.get("/requests/all?unitId=kz-almaty-sc-a", headers=H["daniyar"])
+        check(all(x["employeeId"] == "emp-asel" for x in r.json()["items"]), "HR registry filter unit")
 
         # --- notifications
         other = (await c.get("/notifications", headers=H["erlan"])).json()["items"][0]["id"]
@@ -158,13 +174,13 @@ async def main() -> None:
         # --- demo time
         st = (await c.post("/demo/advance-time", json={"hours": 24 * 31})).json()
         check(st["offsetHours"] == 744, "advance 31 days")
-        r = await c.post("/leave/requests", headers=H["nurlan"], json={"submissionKey": "e2e-t", "startDate": str(today + timedelta(days=5)), "endDate": str(today + timedelta(days=5))})
-        check(r.status_code == 422 and r.json()["code"] == "START_IN_PAST", "shifted clock affects rules")
+        r = await c.post("/leave", headers=H["nurlan"], json={"submissionKey": "e2e-t", "startDate": str(today + timedelta(days=5)), "endDate": str(today + timedelta(days=5))})
+        check(r.status_code == 422 and r.json()["code"] == "INVALID_DATES", "shifted clock affects rules", r.text)
         r = await c.get("/auth/me", headers=H["aigerim"])
         check(r.status_code == 200, "token survives time travel")
         await c.post("/demo/reset")
         st = (await c.get("/demo/state")).json()
-        pend = (await c.get("/leave/requests/pending", headers=H["erlan"])).json()["items"]
+        pend = (await c.get("/leave/pending", headers=H["erlan"])).json()["items"]
         check(st["offsetHours"] == 0 and len(pend) == 1, "reset restores seed + clock")
         check((await c.get("/notifications/unread-count", headers=H["erlan"])).json()["unread"] == 1, "seed: only fresh notification unread")
 

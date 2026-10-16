@@ -1,17 +1,14 @@
-from dataclasses import replace
 from datetime import date, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.integrations.documentolog.models import Document
 from app.integrations.zup.models import ZupHireOffer, ZupHrAttrs, ZupSalary, ZupTimesheet
 from app.integrations.zup.port import HireOffer, HrAttrs, Salary, TimesheetEntry
 
 
 class MockZup:
-    """Читает таблицы zup_*. Остаток отпуска учитывает приказы, «проведённые» в 1С через
-    Documentolog (документы leave_order) — так же, как это сделает настоящий 1С."""
+    """Читает таблицы zup_*. Только чтение: приложение в 1С ничего не пишет."""
 
     async def get_salary(self, session: AsyncSession, employee_id: str) -> Salary | None:
         row = await session.get(ZupSalary, employee_id)
@@ -33,7 +30,7 @@ class MockZup:
         row = await session.get(ZupHrAttrs, employee_id)
         if row is None:
             return None
-        attrs = HrAttrs(
+        return HrAttrs(
             row.grade_code,
             row.last_salary_review_date,
             row.vacation_days_left,
@@ -41,13 +38,6 @@ class MockZup:
             row.incidents_last_date,
             row.planned_shifts_per_month,
         )
-        orders = await session.scalars(
-            select(Document).where(
-                Document.employee_id == employee_id, Document.kind == "leave_order", Document.status == "registered"
-            )
-        )
-        used = sum(int(d.data.get("days", 0)) for d in orders)
-        return replace(attrs, vacation_days_left=attrs.vacation_days_left - used)
 
     async def list_recent_offers(self, session: AsyncSession, since: datetime) -> list[HireOffer]:
         rows = await session.scalars(select(ZupHireOffer).where(ZupHireOffer.offered_at >= since))
