@@ -1,0 +1,10 @@
+[
+  {"login": "erlan", "full_name": "Ерлан Мухамедов", "role": "Manager", "country": "KZ", "unit_id": "kz-almaty-sc-b", "position": "Руководитель смены Б", "manager": null, "hire_date": "2022-03-14", "qualification": "sorter"},
+  {"login": "gulnara", "full_name": "Гульнара Ахметова", "role": "Manager", "country": "KZ", "unit_id": "kz-almaty-sc-a", "position": "Руководитель смены А", "manager": null, "hire_date": "2021-11-01", "qualification": "sorter"},
+  {"login": "daniyar", "full_name": "Данияр Оспанов", "role": "HRAdmin", "country": "KZ", "unit_id": "kz-almaty-office", "position": "HR-менеджер", "manager": null, "hire_date": "2023-01-09", "qualification": null},
+  {"login": "aigerim", "full_name": "Айгерим Сейткали", "role": "Employee", "country": "KZ", "unit_id": "kz-almaty-sc-b", "position": "Сортировщик", "manager": "erlan", "hire_date": "2024-06-03", "qualification": "sorter"},
+  {"login": "nurlan", "full_name": "Нурлан Абенов", "role": "Employee", "country": "KZ", "unit_id": "kz-almaty-sc-b", "position": "Сортировщик", "manager": "erlan", "hire_date": "2023-09-11", "qualification": "sorter"},
+  {"login": "asel", "full_name": "Асель Касымова", "role": "Employee", "country": "KZ", "unit_id": "kz-almaty-sc-a", "position": "Сортировщик", "manager": "gulnara", "hire_date": "2024-02-19", "qualification": "sorter"},
+  {"login": "aibek", "full_name": "Айбек Жээнбеков", "role": "Manager", "country": "KG", "unit_id": "kg-bishkek-wh", "position": "Руководитель склада", "manager": null, "hire_date": "2023-05-15", "qualification": "sorter"},
+  {"login": "bakyt", "full_name": "Бакыт Токтогулов", "role": "Employee", "country": "KG", "unit_id": "kg-bishkek-wh", "position": "Сортировщик", "manager": "aibek", "hire_date": "2024-08-05", "qualification": "sorter"}
+]

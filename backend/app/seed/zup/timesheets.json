@@ -1,0 +1,9 @@
+{
+  "_comment": "Смены текущего месяца до вчерашнего дня включительно. shifts — сколько смен отработано, night — из них ночных.",
+  "rows": [
+    {"login": "aigerim", "shifts": 14, "night": 0, "hours": 12},
+    {"login": "nurlan", "shifts": 13, "night": 4, "hours": 12},
+    {"login": "asel", "shifts": 12, "night": 0, "hours": 12},
+    {"login": "bakyt", "shifts": 11, "night": 2, "hours": 12}
+  ]
+}

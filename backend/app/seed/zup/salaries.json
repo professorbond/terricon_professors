@@ -1,0 +1,13 @@
+{
+  "_comment": "Оклад в месяц и ставка ЗА СМЕНУ (целые, валюта страны). Вымышленные данные.",
+  "rows": [
+    {"login": "aigerim", "monthly_base": 240000, "shift_rate": 12000, "night_bonus_rate": 2000},
+    {"login": "nurlan", "monthly_base": 250000, "shift_rate": 12500, "night_bonus_rate": 2000},
+    {"login": "asel", "monthly_base": 245000, "shift_rate": 12000, "night_bonus_rate": 2000},
+    {"login": "erlan", "monthly_base": 420000, "shift_rate": null, "night_bonus_rate": null},
+    {"login": "gulnara", "monthly_base": 430000, "shift_rate": null, "night_bonus_rate": null},
+    {"login": "daniyar", "monthly_base": 450000, "shift_rate": null, "night_bonus_rate": null},
+    {"login": "bakyt", "monthly_base": 36000, "shift_rate": 1800, "night_bonus_rate": 300},
+    {"login": "aibek", "monthly_base": 62000, "shift_rate": null, "night_bonus_rate": null}
+  ]
+}

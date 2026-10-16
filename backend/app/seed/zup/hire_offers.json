@@ -1,0 +1,6 @@
+{
+  "_comment": "Офферы новичкам (для сигнала pay_equity). days_ago относительно clock.now().",
+  "rows": [
+    {"id": "offer-kz-sort1-01", "position": "Сортировщик", "grade_code": "SORT-1", "country": "KZ", "offered_monthly_base": 260000, "days_ago": 20}
+  ]
+}
