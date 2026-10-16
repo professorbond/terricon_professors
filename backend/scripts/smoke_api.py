@@ -92,7 +92,7 @@ async def main() -> None:
         check((await c.get(f"/requests/{bid}", headers=H["erlan"])).status_code == 403, "KZ manager cannot see KG request")
         r = await c.post(f"/leave/{bid}/decision", headers=H["aibek"], json={"decision": "Rejected", "expectedVersion": 1})
         check(r.status_code == 422 and r.json()["code"] == "COMMENT_REQUIRED", "reject w/o comment 422")
-        r = await c.post(f"/leave/{bid}/decision", headers=H["aibek"], json={"decision": "Rejected", "expectedVersion": 1, "comment": "Инвентаризация склада"})
+        r = await c.post(f"/leave/{bid}/decision", headers=H["aibek"], json={"decision": "Rejected", "expectedVersion": 1, "comment": "Инвентаризация склада", "reasonCode": "STAFFING"})
         check(r.status_code == 200 and r.json()["decisionComment"] == "Инвентаризация склада", "aibek rejects with reason")
         n = (await c.get("/notifications?unreadOnly=true", headers=H["bakyt"])).json()["items"]
         check(any("Инвентаризация склада" in x["message"] for x in n), "bakyt sees reason in notification", n)
@@ -114,7 +114,7 @@ async def main() -> None:
         nid = r.json()["id"]
         a, b = await asyncio.gather(
             c.post(f"/leave/{nid}/decision", headers=H["erlan"], json={"decision": "Approved", "expectedVersion": 1}),
-            c.post(f"/leave/{nid}/decision", headers=H["erlan"], json={"decision": "Rejected", "expectedVersion": 1, "comment": "гонка"}),
+            c.post(f"/leave/{nid}/decision", headers=H["erlan"], json={"decision": "Rejected", "expectedVersion": 1, "comment": "гонка решений", "reasonCode": "OTHER"}),
         )
         codes = sorted([a.status_code, b.status_code])
         final = (await c.get(f"/requests/{nid}", headers=H["erlan"])).json()
@@ -176,6 +176,14 @@ async def main() -> None:
         check(r.status_code == 201, "academy: manager assigns own team")
         check(any(n["kind"] == "academy.assigned" for n in (await c.get("/notifications", headers=H["asel"])).json()["items"]), "academy: assigned notification")
 
+        # --- guarantees
+        card = (await c.get(f"/leave/{pend[0]['id']}", headers=H["aigerim"])).json()
+        check("guarantee" in card["extensions"], "guarantee badge in card")
+        r = await c.post("/leave", headers=H["asel"], json={"submissionKey": "e2e-g", "startDate": str(today + timedelta(days=100)), "endDate": str(today + timedelta(days=100))})
+        gid = r.json()["id"]
+        r = await c.post(f"/requests/{gid}/decide", headers=H["gulnara"], json={"decision": "Rejected", "comment": "Нет людей в смене А"})
+        check(r.json().get("code") == "REASON_REQUIRED", "reject without reason -> REASON_REQUIRED", r.text)
+
         # --- ai jana
         a = (await c.post("/ai/ask", headers=H["aigerim"], json={"question": "Сколько дней отпуска положено?"})).json()
         check(a["answered"] and a["sources"][0]["articleId"] == "kb-kz-vacation", "ai: KZ answer with KZ source", a)
@@ -195,7 +203,7 @@ async def main() -> None:
 
         # --- kk
         await c.put("/auth/me/lang", headers=H["bakyt"], json={"lang": "kk"})
-        n = (await c.get("/notifications", headers=H["bakyt"])).json()["items"][0]
+        n = next(x for x in (await c.get("/notifications", headers=H["bakyt"])).json()["items"] if x["kind"] == "request.decided")
         check(n["title"] == "Өтінім қабылданбады", "kk notification", n["title"])
         check((await c.put("/auth/me/lang", headers=H["bakyt"], json={"lang": "en"})).status_code == 422, "unknown lang 422")
 

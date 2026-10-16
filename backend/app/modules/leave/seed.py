@@ -36,12 +36,20 @@ async def seed(session: AsyncSession) -> None:
     now = clock.now()
     erlan, gulnara = await _manager(session, "erlan"), await _manager(session, "gulnara")
 
-    # Нурлан: два отказа за полгода, с причинами (сигнал rejections для радара)
-    for days_ago, reason in ((120, "Пиковая нагрузка: распродажа 11.11"), (45, "В эти даты в смене уже двое в отпуске")):
+    # Нурлан: два отказа за полгода, с причинами (сигнал rejections для радара).
+    # Второй отказ Ерлан дал на 3-й день — позже срока 48 ч (сигнал slow_answers, рентген)
+    rejections = ((120, 1, "PEAK_LOAD", "Пиковая нагрузка: распродажа 11.11"), (45, 3, "TEAM_OVERLAP", "В эти даты в смене уже двое в отпуске"))
+    for days_ago, decided_after, code, reason in rejections:
         with at_time(now - timedelta(days=days_ago)):
             req = await _submit(session, "nurlan", 20, 5, "Семейные обстоятельства", f"seed-nurlan-{days_ago}")
-        with at_time(now - timedelta(days=days_ago - 1)):
-            await requests.decide(session, erlan, req.id, "Rejected", comment=reason)
+        with at_time(now - timedelta(days=days_ago - decided_after)):
+            await requests.decide(session, erlan, req.id, "Rejected", reason_code=code, comment=reason)
+
+    # Нурлан: отпуск, который Ерлан одобрил через 4 дня (позже срока)
+    with at_time(now - timedelta(days=70)):
+        req = await _submit(session, "nurlan", 15, 2, "Свадьба друга", "seed-nurlan-70")
+    with at_time(now - timedelta(days=66)):
+        await requests.decide(session, erlan, req.id, "Approved")
 
     # Асель: одобренный отпуск
     with at_time(now - timedelta(days=60)):
@@ -52,7 +60,7 @@ async def seed(session: AsyncSession) -> None:
     # Айгерим: отпуск, одобренный в прошлом месяце (с приказом в Documentolog)
     with at_time(now - timedelta(days=40)):
         req = await _submit(session, "aigerim", 10, 3, "Свадьба сестры", "seed-aigerim-past")
-    with at_time(now - timedelta(days=39)):
+    with at_time(now - timedelta(days=37)):  # тоже позже срока: у Ерлана 3 решения с опозданием
         await requests.decide(session, erlan, req.id, "Approved")
 
     # Айгерим: отпуск на рассмотрении у Ерлана (2 часа назад, срок по политике — 48 ч)

@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Any
 
 from app.core.profile import LeaveBalance, TrainingSummary
 from app.core.schemas import ApiModel
@@ -32,3 +33,5 @@ class EmployeeProfile(ApiModel):
     assigned_training: list[TrainingSummary] = []
     # Только в собственном профиле
     unread_notifications: int | None = None
+    # Поля ext-модулей: {"wageAccess": {...}, "ladder": {...}} — есть, только если фича включена
+    extensions: dict[str, Any] = {}

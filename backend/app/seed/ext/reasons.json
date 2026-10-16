@@ -1,0 +1,11 @@
+{
+  "_comment": "Справочник причин отказа. applies_to: типы заявок, [] — любые.",
+  "rows": [
+    {"code": "STAFFING", "applies_to": ["vacation"]},
+    {"code": "PEAK_LOAD", "applies_to": ["vacation"]},
+    {"code": "TEAM_OVERLAP", "applies_to": ["vacation"]},
+    {"code": "LATE_NOTICE", "applies_to": ["vacation"]},
+    {"code": "NOT_HR_TOPIC", "applies_to": ["hr_question", "grievance"]},
+    {"code": "OTHER", "applies_to": []}
+  ]
+}

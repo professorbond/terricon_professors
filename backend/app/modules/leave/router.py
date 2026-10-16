@@ -55,6 +55,7 @@ async def to_leave(session: AsyncSession, req: Request, viewer: Employee) -> Lea
         decided_by_system=r.decided_by_system,
         documents=r.documents,
         permissions=r.permissions,
+        extensions=r.extensions,
     )
 
 

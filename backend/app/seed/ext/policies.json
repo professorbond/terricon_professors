@@ -1,0 +1,15 @@
+{
+  "_comment": "Политики HR по странам (CLAUDE.md §11). request_type '*' — настройки страны. Валюта — страны (KZT/KGS).",
+  "rows": [
+    {"country": "KZ", "request_type": "*", "review_period_months": 12, "replacement_cost_pct": 30, "avg_annual_salary": 3000000},
+    {"country": "KZ", "request_type": "vacation", "sla_hours": 48, "on_timeout": "auto_approve"},
+    {"country": "KZ", "request_type": "wage_access", "wage_limit_pct": 50, "wage_max_per_period": 2, "wage_min_amount": 5000},
+    {"country": "KZ", "request_type": "grievance", "sla_hours": 72, "on_timeout": "escalate_hr"},
+    {"country": "KZ", "request_type": "hr_question", "sla_hours": 72, "on_timeout": "escalate_hr"},
+    {"country": "KG", "request_type": "*", "review_period_months": 12, "replacement_cost_pct": 30, "avg_annual_salary": 450000},
+    {"country": "KG", "request_type": "vacation", "sla_hours": 72, "on_timeout": "auto_approve"},
+    {"country": "KG", "request_type": "wage_access", "wage_limit_pct": 40, "wage_max_per_period": 2, "wage_min_amount": 500},
+    {"country": "KG", "request_type": "grievance", "sla_hours": 72, "on_timeout": "escalate_hr"},
+    {"country": "KG", "request_type": "hr_question", "sla_hours": 72, "on_timeout": "escalate_hr"}
+  ]
+}

@@ -232,6 +232,37 @@ AskOut = {
 `lang` (`ru` | `kk`) по умолчанию берётся из языка пользователя. Без LLM ответ даётся на языке базы (русском), сообщения об отказе — на `kk`.
 Вопросы записываются в журнал без идентификатора сотрудника. Отсюда HR потом увидит пробелы базы.
 
+## Ext-фичи (этапы 4–5)
+
+Каждая ext-фича выключается флагом `EXT_FEATURES`: выключенная не регистрирует роуты и не добавляет поля.
+Список включённых фич отдаёт `GET /api/settings → features[]`. Экраны ext-фич пока не сделаны, здесь только API.
+
+### Гарантии и политики — флаг `guarantees` ✅
+
+| | Метод | Путь | Роли | Ответ |
+|---|---|---|---|---|
+| ✅ | GET | `/api/ext/guarantees/reasons?type=vacation` | все | `{code, title}[]` — справочник для окна отказа |
+| ✅ | GET | `/api/ext/guarantees/summary/me` | все | `{openRequests[{requestId, number, type, typeTitle, deadlineAt}], rejectionsWithoutReason, decidedOnTime, decidedTotal, nextSalaryReview}` — блок «Мои гарантии» |
+| ✅ | GET | `/api/ext/policies?country=` | все (своя страна), HR — любая | `Policy[]` |
+| ✅ | PUT | `/api/ext/policies/{id}` | HRAdmin | Частичное обновление `{slaHours, onTimeout, enabled, wageLimitPct, …}` |
+
+- **Срок ответа.** При создании заявки, если у страны есть политика для этого типа, в карточке заявки
+  (`RequestOut` и `LeaveRequest`) появляется `extensions.guarantee = {deadlineAt, resolution, overdue, decidedLate}`.
+  `resolution` принимает значения `none | auto_approved | escalated | overdue`. В истории появляется событие `deadline_set`,
+  автор получает уведомление `guarantee.deadline`.
+- **Истёк срок.** По политике заявка одобряется системой (`decidedBySystem: true`, `actorId: "system"`) или передаётся HR (статус `Escalated`).
+  Если заявка уже адресована HR, ставится `resolution: overdue` и HR получает уведомление `guarantee.overdue`.
+- **Отказ только с причиной** (для всех типов заявок). Нужны `reasonCode` из справочника и `comment` не короче 10 символов. Ошибки:
+  - `REASON_REQUIRED` — нет кода;
+  - `UNKNOWN_REASON` — кода нет в справочнике, в `data.allowed` список допустимых;
+  - `COMMENT_REQUIRED` — комментарий короче 10 символов.
+
+  ⚠️ **Нужна правка фронтенда:** в окне отказа должен быть выбор причины (`GET /api/ext/guarantees/reasons?type=…`),
+  а выбранный код отправляется в `reasonCode`. Пока его нет, можно поставить `GUARANTEES_REQUIRE_REASON=false`:
+  тогда без кода подставится `OTHER`, но комментарий от 10 символов всё равно обязателен.
+- **Деньги.** Для денежных типов автоодобрение по сроку запрещено: `AUTO_APPROVE_FORBIDDEN`.
+- **Политики по странам.** KZ: отпуск 48 ч с автоодобрением, вопрос к HR 72 ч. KG: отпуск 72 ч.
+
 ## Настройки и демо
 
 | ✅ | Метод | Путь | Ответ |
@@ -258,3 +289,5 @@ AskOut = {
 | 7 | `LeaveRequestEvent.actorId` | `string` | `"system"` для системных событий | Нет |
 | 8 | Имена из CLAUDE.md | — | Взяты имена фронтенда: роли `Employee/Manager/HRAdmin` вместо `employee/manager/hr`, статусы `Submitted…` вместо `pending…`, поля `startDate/endDate` вместо `date_from/date_to` | Нет |
 | 9 | `signOut` | метод сервиса | Эндпоинта нет: JWT без состояния | Нет |
+| 10 | Отказ по заявке | `LeaveDecision {decision, expectedVersion, comment}` | С гарантиями обязателен `reasonCode` из справочника, комментарий от 10 символов | **Да**: выбор причины в окне отказа. Временный обход — `GUARANTEES_REQUIRE_REASON=false` |
+| 11 | Карточка заявки | — | Поле `extensions` (`guarantee` и др.) | Нет; нужно только для бейджа «Ответ до …» |

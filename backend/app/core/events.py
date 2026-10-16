@@ -6,7 +6,7 @@
 
 События каркаса:
   request.created          {session, request, employee}
-  request.before_decision  {session, request, actor, decision, reason_code, comment, by_system}
+  request.before_decision  {session, request, actor, decision, reason_code, comment, by_system, overrides}
   request.decided          {session, request, actor, by_system}
   request.cancelled        {session, request, actor}
 """

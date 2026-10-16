@@ -22,7 +22,7 @@ from app.integrations.zup.models import ZupHireOffer, ZupHrAttrs, ZupSalary, Zup
 SEED_DIR = Path(__file__).parent
 DEMO_PASSWORD = "demo1234"
 # Увеличивать, когда меняется seed: демо-база пересоздастся при следующем старте
-SEED_VERSION = 4
+SEED_VERSION = 5
 
 
 def load_json(relative: str) -> Any:

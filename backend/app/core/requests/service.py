@@ -210,7 +210,9 @@ async def _apply_decision(
     if decision == APPROVED and not comment and request_types.get(req.type).comment_required_on_approve:
         raise validation("COMMENT_REQUIRED", "Напишите ответ", "comment")
 
-    # Модули (гарантии и др.) могут запретить решение, бросив AppError
+    # Модули (гарантии и др.) могут запретить решение, бросив AppError,
+    # или уточнить его через overrides (например, {"reason_code": "OTHER"})
+    overrides: dict[str, Any] = {}
     await events.emit(
         "request.before_decision",
         session=session,
@@ -220,7 +222,9 @@ async def _apply_decision(
         reason_code=reason_code,
         comment=comment,
         by_system=actor is None,
+        overrides=overrides,
     )
+    reason_code = overrides.get("reason_code", reason_code)
 
     req.status = decision
     req.decided_at = clock.now()

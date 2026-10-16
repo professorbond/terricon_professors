@@ -5,6 +5,8 @@ ext_* (каждый ext-модуль выключается флагом EXT_FEA
 """
 
 MODULES: list[str] = [
+    # ext_guarantees раньше заявок: seed-заявки получают сроки и причины отказа по политикам
+    "ext_guarantees",
     "profile",
     "leave",
     "hr_question",

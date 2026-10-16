@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query
+from pydantic.alias_generators import to_camel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,7 +26,14 @@ async def build_profile(session: AsyncSession, viewer: Employee, emp: Employee) 
     zup = get_zup()
     attrs = await zup.get_hr_attrs(session, emp.id)
     salary = await zup.get_salary(session, emp.id) if rbac.can_view_salary(viewer, emp) else None
-    extra = await profile_registry.collect(session, viewer, emp)
+    collected = await profile_registry.collect(session, viewer, emp)
+    known = set(EmployeeProfile.model_fields)
+    extra = {k: v for k, v in collected.items() if k in known}
+    extensions = {
+        to_camel(k): (v.model_dump(mode="json", by_alias=True) if hasattr(v, "model_dump") else v)
+        for k, v in collected.items()
+        if k not in known
+    }
     return EmployeeProfile(
         id=emp.id,
         display_name=emp.full_name,
@@ -43,6 +51,7 @@ async def build_profile(session: AsyncSession, viewer: Employee, emp: Employee) 
         grade_code=attrs.grade_code if attrs else None,
         monthly_base=salary.monthly_base if salary else None,
         unread_notifications=await unread_count(session, emp.id) if viewer.id == emp.id else None,
+        extensions=extensions,
         **extra,
     )
 

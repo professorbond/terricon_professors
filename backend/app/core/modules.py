@@ -26,7 +26,7 @@ from app.core.config import Settings
 from app.core.events import EventBus
 from app.core.i18n import register as register_i18n
 from app.core.profile import ProfileRegistry
-from app.core.requests.registry import RequestTypeRegistry
+from app.core.requests.registry import RequestExtensions, RequestTypeRegistry
 from app.core.ticks import TickRegistry
 
 
@@ -38,6 +38,7 @@ class ModuleContext:
     request_types: RequestTypeRegistry
     ticks: TickRegistry
     profile: ProfileRegistry
+    request_extensions: RequestExtensions
 
     def include_router(self, router: APIRouter) -> None:
         self.app.include_router(router)

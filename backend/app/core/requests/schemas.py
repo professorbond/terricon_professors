@@ -7,7 +7,7 @@ from app.core.i18n import t
 from app.core.org.models import Employee
 from app.core.requests import service
 from app.core.requests.models import Request
-from app.core.requests.registry import request_types
+from app.core.requests.registry import request_extensions, request_types
 from app.core.schemas import ApiModel
 
 SYSTEM_LABEL = {"ru": "Система", "kk": "Жүйе"}
@@ -59,6 +59,8 @@ class RequestOut(ApiModel):
     history: list[RequestEventOut]
     documents: list[DocumentRef]
     permissions: RequestPermissions
+    # Поля модулей: {"guarantee": {...}} — см. RequestExtensions
+    extensions: dict[str, Any] = {}
 
 
 async def _names(session: AsyncSession, ids: set[str]) -> dict[str, str]:
@@ -124,4 +126,9 @@ async def present(session: AsyncSession, req: Request, viewer: Employee) -> Requ
         permissions=RequestPermissions(
             can_decide=service.can_decide(viewer, req), can_cancel=service.can_cancel(viewer, req)
         ),
+        extensions=_jsonable(await request_extensions.collect(session, req, viewer)),
     )
+
+
+def _jsonable(fields: dict[str, Any]) -> dict[str, Any]:
+    return {k: (v.model_dump(mode="json", by_alias=True) if hasattr(v, "model_dump") else v) for k, v in fields.items()}
