@@ -6,7 +6,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from app.core.config import get_settings
-from app.core.db import Base
+from app.core.db import Base, UTCDateTime
 from app.core.modules import import_all_models
 
 config = context.config
@@ -17,14 +17,23 @@ import_all_models()
 target_metadata = Base.metadata
 
 
+def render_item(type_: str, obj, autogen_context):  # noqa: ANN001
+    """UTCDateTime — обёртка над timestamptz: в миграциях пишем обычный sa.DateTime(timezone=True)."""
+    if type_ == "type" and isinstance(obj, UTCDateTime):
+        return "sa.DateTime(timezone=True)"
+    return False
+
+
 def run_migrations_offline() -> None:
-    context.configure(url=get_settings().database_url, target_metadata=target_metadata, literal_binds=True)
+    context.configure(
+        url=get_settings().database_url, target_metadata=target_metadata, literal_binds=True, render_item=render_item
+    )
     with context.begin_transaction():
         context.run_migrations()
 
 
 def do_run_migrations(connection: Connection) -> None:
-    context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
+    context.configure(connection=connection, target_metadata=target_metadata, compare_type=True, render_item=render_item)
     with context.begin_transaction():
         context.run_migrations()
 

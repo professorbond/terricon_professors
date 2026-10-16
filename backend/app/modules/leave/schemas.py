@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field
 
@@ -59,6 +59,7 @@ class LeaveRequestOut(ApiModel):
     decided_by_system: bool
     documents: list[DocumentRef]
     permissions: RequestPermissions
+    extensions: dict[str, Any] = {}
 
 
 class LeaveBalanceOut(ApiModel):

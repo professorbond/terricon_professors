@@ -122,7 +122,7 @@ async def test_end_to_end_vacation_flow(client):
     assert note["kind"] == "request.decided" and note["titleKey"] == "notif.request.approved.title" and note["readAt"] is None
 
     card = (await client.get(f"/api/leave/{created['id']}", headers=ha)).json()
-    assert [h["event"] for h in card["history"]] == ["created", "approved", "document_registered"]
+    assert [h["event"] for h in card["history"]] == ["created", "deadline_set", "approved", "document_registered"]
     assert card["history"][-1]["actorId"] == "system"
     assert card["documents"][0]["kind"] == "leave_order" and card["documents"][0]["number"].startswith("DL-")
     assert (await client.get("/api/leave/balance", headers=ha)).json()["days"] == 18  # 21 − 3

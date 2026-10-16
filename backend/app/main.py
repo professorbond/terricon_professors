@@ -21,7 +21,7 @@ from app.core.modules import ModuleContext, import_all_models, load_modules
 from app.core.notifications.router import router as notifications_router
 from app.core.profile import profile_registry
 from app.core.requests import notifications as request_notifications
-from app.core.requests.registry import request_types
+from app.core.requests.registry import request_extensions, request_types
 from app.core.requests.router import router as requests_router
 from app.core.settings_api import router as settings_router
 from app.core.ticks import tick_loop, ticks
@@ -80,6 +80,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     request_types.clear()
     ticks.clear()
     profile_registry.clear()
+    request_extensions.clear()
     i18n.clear()
     import_all_models()
 
@@ -101,7 +102,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     request_notifications.register(events)
 
     ctx = ModuleContext(
-        app=app, settings=settings, events=events, request_types=request_types, ticks=ticks, profile=profile_registry
+        app=app,
+        settings=settings,
+        events=events,
+        request_types=request_types,
+        ticks=ticks,
+        profile=profile_registry,
+        request_extensions=request_extensions,
     )
     enabled = []
     for module in load_modules(MODULES):

@@ -1,11 +1,11 @@
 """Async SQLAlchemy: движок, сессии, базовый класс моделей."""
 
 from collections.abc import AsyncIterator
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import Depends
-from sqlalchemy import JSON, DateTime, MetaData
+from sqlalchemy import JSON, DateTime, MetaData, TypeDecorator
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
@@ -14,6 +14,23 @@ from app.core.config import get_settings
 
 # JSONB в Postgres, JSON в SQLite (тесты)
 JsonType = JSON().with_variant(JSONB(), "postgresql")
+
+
+class UTCDateTime(TypeDecorator[datetime]):
+    """timestamptz, который всегда возвращает aware-время в UTC (SQLite отдаёт naive — выравниваем)."""
+
+    impl = DateTime(timezone=True)
+    cache_ok = True
+
+    def process_bind_param(self, value: datetime | None, dialect: Any) -> datetime | None:
+        if value is not None and value.tzinfo is None:
+            value = value.replace(tzinfo=UTC)
+        return value
+
+    def process_result_value(self, value: datetime | None, dialect: Any) -> datetime | None:
+        if value is not None and value.tzinfo is None:
+            value = value.replace(tzinfo=UTC)
+        return value
 
 NAMING = {
     "ix": "ix_%(column_0_label)s",
@@ -26,7 +43,7 @@ NAMING = {
 
 class Base(DeclarativeBase):
     metadata = MetaData(naming_convention=NAMING)
-    type_annotation_map = {dict[str, Any]: JsonType, list[Any]: JsonType, datetime: DateTime(timezone=True)}
+    type_annotation_map = {dict[str, Any]: JsonType, list[Any]: JsonType, datetime: UTCDateTime()}
 
 
 _engine: AsyncEngine | None = None

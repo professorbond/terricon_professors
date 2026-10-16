@@ -49,3 +49,28 @@ class RequestTypeRegistry:
 
 
 request_types = RequestTypeRegistry()
+
+
+class RequestExtensions:
+    """Модули добавляют свои поля в карточку заявки (RequestOut.extensions), например срок гарантии.
+
+    async def extend(session, request, viewer) -> dict[str, Any]: ...
+    """
+
+    def __init__(self) -> None:
+        self._fns: list = []
+
+    def register(self, fn) -> None:  # noqa: ANN001
+        self._fns.append(fn)
+
+    def clear(self) -> None:
+        self._fns.clear()
+
+    async def collect(self, session, request: Request, viewer: Employee) -> dict:  # noqa: ANN001
+        out: dict = {}
+        for fn in self._fns:
+            out.update(await fn(session, request, viewer))
+        return out
+
+
+request_extensions = RequestExtensions()

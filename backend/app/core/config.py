@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173"
     # Включённые ext-фичи Даниила через запятую, "*" — все
     ext_features: str = "*"
+    # Гарантии: отказ только с кодом причины из справочника (CLAUDE.md §7.1).
+    # false — временно, пока во фронтенде нет выбора причины: без кода ставится OTHER
+    guarantees_require_reason: bool = True
     anthropic_api_key: str | None = None
     anthropic_model: str = "claude-opus-5-5"
 
