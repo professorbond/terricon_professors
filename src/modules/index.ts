@@ -2,11 +2,13 @@
 import { registerModules } from './ext-core/registry'
 import { guaranteesModule } from './ext-guarantees'
 import { wageModule } from './ext-wage'
+import { hrConsoleModule } from './ext-hr'
 import './ext-wage/i18n'
 
 registerModules([
   wageModule,
   guaranteesModule,
+  hrConsoleModule,
 ])
 
 export { extElement, extNavigation, extPlannedScreens } from './ext-core/registry'
