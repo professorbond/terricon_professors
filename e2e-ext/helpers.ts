@@ -18,6 +18,7 @@ export async function loginAs(page: Page, login: string, path = '/dashboard') {
 }
 
 export async function shot(page: Page, name: string) {
+  await page.addStyleTag({ content: '.skip-link{display:none!important}' })
   await page.evaluate(() => { (document.activeElement as HTMLElement | null)?.blur(); return document.fonts.ready })
   await page.waitForTimeout(400)
   await page.screenshot({ path: `${SHOTS}/${name}.png`, fullPage: true })
