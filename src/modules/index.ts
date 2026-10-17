@@ -11,3 +11,5 @@ registerModules([
 
 export { extElement, extNavigation, extPlannedScreens } from './ext-core/registry'
 export { ExtSlot } from './ext-core/ExtSlot'
+export { RejectReason } from './ext-guarantees/RejectReason'
+export { useRejectReasonRequired, MIN_REJECT_COMMENT } from './ext-guarantees/rejectRules'

@@ -67,3 +67,6 @@
 .ext-sent { display: flex; gap: 1rem; align-items: flex-start; padding: 1.5rem; }
 .ext-sent h2 { margin: 0 0 .35rem; }
 .confirmation-dialog h2 { margin-top: 0; }
+.ext-reason select { width: 100%; min-height: 2.75rem; padding: .5rem .7rem; border: 1px solid var(--border-control); border-radius: 6px; background: var(--surface-raised); font: inherit; color: var(--text-primary); }
+.request-status-line .ext-badges, td .ext-badges { margin: 0 0 0 .4rem; vertical-align: middle; }
+td .ext-badges { display: flex; margin: .35rem 0 0; }
