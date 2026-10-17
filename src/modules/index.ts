@@ -5,6 +5,8 @@ import { wageModule } from './ext-wage'
 import { hrConsoleModule } from './ext-hr'
 import { academyModule } from './academy'
 import { ladderModule } from './ext-ladder'
+import { policiesModule } from './ext-policies'
+import './ext-policies/i18n'
 import './ext-wage/i18n'
 import './ext-hr/i18n'
 import './academy/i18n'
@@ -15,6 +17,7 @@ registerModules([
   hrConsoleModule,
   academyModule,
   ladderModule,
+  policiesModule,
 ])
 
 export { extElement, extNavigation, extPlannedScreens } from './ext-core/registry'
