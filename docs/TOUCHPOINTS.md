@@ -13,3 +13,4 @@
 | 6 | `src/pages/profile/ProfilePage.tsx` | `<ExtSlot name="profile.sections" />` после карточки профиля | «Открытая лестница» в профиле |
 | 7 | `src/features/leave/components/RequestList.tsx` | `<ExtSlot name="request.list.badge" requestId=…/>` рядом со статусом | Бейдж срока («Ответ до …») в списке заявок |
 | 8 | `src/pages/requests/RequestDetailPage.tsx` | `<ExtSlot name="request.card.badges" requestId=…/>` в строке статуса | Бейдж срока в карточке заявки |
+| 9 | `src/features/leave/components/DecisionPanel.tsx`, `src/features/leave/model.ts` | При отказе — `<RejectReason>` (причина из справочника), кнопка неактивна без причины и комментария от 10 символов; `reasonCode?` в `LeaveDecision` и в вызове `decide` | Гарантии: отказ только с причиной. В режиме моков поле не показывается и не требуется |
