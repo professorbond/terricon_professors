@@ -25,3 +25,8 @@ export function dateTime(value: string): string {
 export function todayAlmaty(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(new Date())
 }
+
+/** Неразрывные пробелы внутри сумм в готовом тексте с сервера: «250 000 ₸» не рвётся на строке. */
+export function keepMoneyTogether(text: string): string {
+  return text.replace(/(\d) (?=\d{3}\b)/g, '$1\u00a0').replace(/(\d) (₸|сом)/g, '$1\u00a0$2')
+}
