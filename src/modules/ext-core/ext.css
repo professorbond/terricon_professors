@@ -82,3 +82,17 @@ td .ext-badges { display: flex; margin: .35rem 0 0; }
 .ext-risk-signals p { margin: 0 0 .3rem; }
 .ext-risk-signals .ext-actions { margin: 0; }
 @media (max-width: 720px) { .ext-risk { grid-template-columns: 1fr; } }
+.ext-md h2, .ext-md h3 { margin: 1.25rem 0 .5rem; letter-spacing: -.01em; }
+.ext-md h3:first-child, .ext-md h2:first-child { margin-top: 0; }
+.ext-md p, .ext-md li { line-height: 1.6; max-width: 46rem; }
+.ext-md ol, .ext-md ul { padding-left: 1.25rem; }
+.ext-progress { height: 4px; background: var(--surface-subtle); border-radius: 2px; overflow: hidden; margin: .5rem 0; max-width: 16rem; }
+.ext-progress > span { display: block; height: 100%; background: var(--action-primary); }
+.ext-ladder { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: center; }
+.ext-ladder-arrow { font-size: 1.6rem; color: var(--text-secondary); }
+@media (max-width: 640px) { .ext-ladder { grid-template-columns: 1fr; } .ext-ladder-arrow { transform: rotate(90deg); justify-self: start; } }
+.ext-question { border: 0; padding: 0; margin: 0 0 1.25rem; }
+.ext-question legend { font-weight: 600; margin-bottom: .5rem; }
+.ext-question label { display: flex; gap: .6rem; align-items: center; min-height: 2.75rem; padding: .3rem .6rem; border: 1px solid var(--border-subtle); border-radius: 6px; margin-bottom: .4rem; cursor: pointer; }
+.ext-question label:has(input:checked) { border-color: var(--action-primary); background: var(--status-success-surface); }
+.ext-question input { accent-color: var(--action-primary); width: 1.1rem; height: 1.1rem; }
