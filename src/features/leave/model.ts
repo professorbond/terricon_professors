@@ -40,4 +40,4 @@ export interface SubmitLeaveInput {
 
 export type LeaveDecision =
   | { readonly decision: 'Approved'; readonly expectedVersion: number; readonly comment?: string }
-  | { readonly decision: 'Rejected'; readonly expectedVersion: number; readonly comment: string }
+  | { readonly decision: 'Rejected'; readonly expectedVersion: number; readonly comment: string; readonly reasonCode?: string }
